@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Slider?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.Tooltip?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox stylesheets="/styles/styles.css" prefHeight="280.0" prefWidth="600.0" spacing="10" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.crypt.HelloController">
+
+    <GridPane>
+        <padding><Insets topRightBottomLeft="10" /></padding>
+
+        <Label text="Адрес размещения данных:" GridPane.columnIndex="0" GridPane.rowIndex="0">
+            <tooltip>
+                <Tooltip text="Выберите папку, где будет создан зашифрованный контейнер"/>
+            </tooltip>
+        </Label>
+
+        <Button fx:id="browseBtn" onAction="#handleBrowse" text="Обзор" GridPane.columnIndex="0" GridPane.rowIndex="1">
+            <tooltip>
+                <Tooltip text="Нажмите для выбора папки назначения"/>
+            </tooltip>
+        </Button>
+
+        <TextField fx:id="pathField" editable="false" prefHeight="31.0" prefWidth="271.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
+            <tooltip>
+                <Tooltip text="Путь к выбранной папке для шифрования"/>
+            </tooltip>
+        </TextField>
+
+        <Label text="Размер под шифрованные данные (МБ):" GridPane.columnIndex="0" GridPane.rowIndex="2">
+            <tooltip>
+                <Tooltip text="Укажите размер зашифрованного контейнера в мегабайтах"/>
+            </tooltip>
+        </Label>
+
+        <Slider fx:id="sizeSlider" max="10000" min="100" value="1000" GridPane.columnIndex="0" GridPane.rowIndex="3">
+            <tooltip>
+                <Tooltip text="Используйте ползунок для выбора размера от 100 МБ до 10 ГБ"/>
+            </tooltip>
+        </Slider>
+
+        <Label fx:id="sizeValue" text="1000" GridPane.columnIndex="1" GridPane.rowIndex="3">
+            <tooltip>
+                <Tooltip text="Текущий выбранный размер в мегабайтах"/>
+            </tooltip>
+        </Label>
+
+        <Button onAction="#handleCancel" text="Выход" GridPane.columnIndex="0" GridPane.rowIndex="4">
+            <tooltip>
+                <Tooltip text="Закрыть окно без сохранения настроек"/>
+            </tooltip>
+        </Button>
+
+        <Button fx:id="nextBtn" disable="true" text="Далее" GridPane.columnIndex="1" GridPane.rowIndex="4">
+            <tooltip>
+                <Tooltip text="Перейти к следующим настройкам шифрования"/>
+            </tooltip>
+        </Button>
+
+        <columnConstraints>
+            <ColumnConstraints />
+            <ColumnConstraints />
+        </columnConstraints>
+        <rowConstraints>
+            <RowConstraints />
+            <RowConstraints />
+            <RowConstraints />
+            <RowConstraints />
+            <RowConstraints />
+        </rowConstraints>
+    </GridPane>
+</VBox>

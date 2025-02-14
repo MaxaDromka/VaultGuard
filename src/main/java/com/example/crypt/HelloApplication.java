@@ -100,7 +100,7 @@ public class HelloApplication extends Application {
         }
     }
 
-    private void saveToConfig(String path, int size) {
+    /*private void saveToConfig(String path, int size) {
         try (FileWriter writer = new FileWriter(CONFIG_FILE, true)) {
             writer.write(String.format("[encrypted_section%n", System.currentTimeMillis()));
             writer.write(String.format("path = %s%n", path));
@@ -108,5 +108,5 @@ public class HelloApplication extends Application {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
+    }*/
 }

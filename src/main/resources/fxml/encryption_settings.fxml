@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane prefHeight="400.0" prefWidth="600.0"
+            xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.crypt.EncryptionSettingsController">
+
+    <VBox spacing="15" prefWidth="550" alignment="TOP_CENTER"
+          AnchorPane.topAnchor="20" AnchorPane.leftAnchor="20" AnchorPane.rightAnchor="20">
+
+        <Label text="Настройки шифрования" Font.font("Arial", 16));
+
+        <GridPane hgap="10" vgap="10">
+            <!-- Выбор алгоритма -->
+            <Label text="Алгоритм шифрования:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+            <ComboBox fx:id="algorithmBox" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+            <!-- Защита паролем -->
+            <CheckBox fx:id="usePasswordCheck" text="Использовать пароль"
+                      GridPane.columnIndex="0" GridPane.rowIndex="1" GridPane.columnSpan="2"/>
+
+            <!-- Поля для пароля -->
+            <Label text="Пароль:" visible="false" GridPane.columnIndex="0" GridPane.rowIndex="2"
+                   fx:id="passwordLabel"/>
+            <PasswordField fx:id="passwordField" visible="false"
+                           GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+
+            <Label text="Подтверждение:" visible="false" GridPane.columnIndex="0" GridPane.rowIndex="3"
+                   fx:id="confirmLabel"/>
+            <PasswordField fx:id="confirmPasswordField" visible="false"
+                           GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+
+            <!-- Генератор пароля -->
+            <Button text="Сгенерировать пароль" visible="false"
+                    fx:id="generatePasswordBtn" GridPane.columnIndex="1" GridPane.rowIndex="4"
+                    onAction="#handleGeneratePassword"/>
+
+            <columnConstraints>
+                <ColumnConstraints prefWidth="150"/>
+                <ColumnConstraints prefWidth="350"/>
+            </columnConstraints>
+            <rowConstraints>
+                <RowConstraints prefHeight="30"/>
+                <RowConstraints prefHeight="30"/>
+                <RowConstraints prefHeight="30"/>
+                <RowConstraints prefHeight="30"/>
+                <RowConstraints prefHeight="40"/>
+            </rowConstraints>
+        </GridPane>
+
+        <!-- Кнопки управления -->
+        <HBox spacing="20" alignment="CENTER_RIGHT">
+            <Button text="Назад" onAction="#handleBack"/>
+            <Button text="Зашифровать" fx:id="encryptBtn" onAction="#handleEncrypt"/>
+        </HBox>
+    </VBox>
+</AnchorPane>

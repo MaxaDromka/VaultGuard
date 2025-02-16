@@ -16,6 +16,8 @@
     <GridPane>
         <padding><Insets topRightBottomLeft="10" /></padding>
 
+
+
         <Label text="Адрес размещения данных:" GridPane.columnIndex="0" GridPane.rowIndex="0">
             <tooltip>
                 <Tooltip text="Выберите папку, где будет создан зашифрованный контейнер"/>
@@ -58,11 +60,17 @@
             </tooltip>
         </Button>
 
+        <!-- В creation_window.fxml добавьте после выбора размера -->
+        <Label text="Имя раздела:" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+        <TextField fx:id="nameField" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+
         <Button fx:id="nextBtn" disable="true" text="Далее" GridPane.columnIndex="1" GridPane.rowIndex="4">
             <tooltip>
                 <Tooltip text="Перейти к следующим настройкам шифрования"/>
             </tooltip>
         </Button>
+
+
 
         <columnConstraints>
             <ColumnConstraints />
@@ -75,5 +83,7 @@
             <RowConstraints />
             <RowConstraints />
         </rowConstraints>
+
+
     </GridPane>
 </VBox>

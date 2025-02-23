@@ -2,9 +2,11 @@ package com.example.crypt;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.stage.Stage;
 
 public class EncryptionSettingsController {
     @FXML private ComboBox<String> algorithmBox;
+    @FXML private ComboBox<String> fsTypeBox; // Новое поле для выбора файловой системы
     @FXML private CheckBox usePasswordCheck;
     @FXML private PasswordField passwordField;
     @FXML private PasswordField confirmPasswordField;
@@ -29,6 +31,10 @@ public class EncryptionSettingsController {
         );
         algorithmBox.getSelectionModel().selectFirst();
 
+        // Заполняем типы файловых систем
+        fsTypeBox.getItems().addAll("ext4", "fat32", "ntfs"); // Добавлены поддерживаемые файловые системы
+        fsTypeBox.getSelectionModel().selectFirst();
+
         // Привязка видимости элементов к чекбоксу
         usePasswordCheck.selectedProperty().addListener((obs, oldVal, newVal) -> {
             boolean visible = newVal != null && newVal;
@@ -48,7 +54,7 @@ public class EncryptionSettingsController {
     private void validateFields() {
         boolean valid = true;
 
-        if(usePasswordCheck.isSelected()) {
+        if (usePasswordCheck.isSelected()) {
             valid = !passwordField.getText().isEmpty()
                     && passwordField.getText().equals(confirmPasswordField.getText());
         }
@@ -66,29 +72,58 @@ public class EncryptionSettingsController {
 
     @FXML
     private void handleBack() {
-        // Вернуться к предыдущему окну
+        // Закрываем текущее окно и возвращаемся к предыдущему
+        Stage stage = (Stage) encryptBtn.getScene().getWindow();
+        stage.close();
     }
 
     @FXML
     private void handleEncrypt() {
         // Логика шифрования
         String algorithm = algorithmBox.getValue();
+        String fsType = fsTypeBox.getValue(); // Получаем выбранную файловую систему
         String password = usePasswordCheck.isSelected() ? passwordField.getText() : null;
 
-        // Вызов метода создания контейнера
-        EncryptionManager.createContainer(
-                containerPath,
-                containerSize,
-                containerName,
-                algorithm,
-                password
-                //fsType
-        );
+        try {
+            // Вызов метода создания контейнера
+            EncryptionManager.createContainer(
+                    containerPath,
+                    containerSize,
+                    containerName,
+                    algorithm,
+                    password,
+                    fsType // Передаем тип файловой системы
+            );
+
+            // Уведомление об успешном создании контейнера
+            showAlert("Успех", "Контейнер успешно создан и отформатирован.", Alert.AlertType.INFORMATION);
+
+            // Закрываем окно после успешного создания
+            Stage stage = (Stage) encryptBtn.getScene().getWindow();
+            stage.close();
+        } catch (Exception e) {
+            // Обработка ошибок
+            showAlert("Ошибка", "Не удалось создать контейнер: " + e.getMessage(), Alert.AlertType.ERROR);
+        }
     }
 
+    /**
+     * Устанавливает данные контейнера.
+     */
     public void setContainerData(String path, int size, String name) {
         this.containerPath = path;
         this.containerSize = size;
         this.containerName = name;
+    }
+
+    /**
+     * Показывает диалоговое окно с сообщением.
+     */
+    private void showAlert(String title, String message, Alert.AlertType type) {
+        Alert alert = new Alert(type);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 }

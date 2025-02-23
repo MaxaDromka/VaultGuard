@@ -40,6 +40,13 @@
                     fx:id="generatePasswordBtn" GridPane.columnIndex="1" GridPane.rowIndex="4"
                     onAction="#handleGeneratePassword"/>
 
+            <Label text="Файловая система:" GridPane.columnIndex="0" GridPane.rowIndex="5">
+                <tooltip>
+                    <Tooltip text="Тип файловой системы для контейнера"/>
+                </tooltip>
+            </Label>
+            <ComboBox fx:id="fsTypeBox" GridPane.columnIndex="1" GridPane.rowIndex="5"/>
+
             <columnConstraints>
                 <ColumnConstraints prefWidth="150"/>
                 <ColumnConstraints prefWidth="350"/>

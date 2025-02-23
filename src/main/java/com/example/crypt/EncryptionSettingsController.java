@@ -82,6 +82,7 @@ public class EncryptionSettingsController {
                 containerName,
                 algorithm,
                 password
+                //fsType
         );
     }
 

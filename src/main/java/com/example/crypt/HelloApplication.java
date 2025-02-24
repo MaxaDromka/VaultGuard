@@ -17,6 +17,7 @@ import javafx.stage.Stage;
 import java.awt.*;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.net.URL;
 import java.util.prefs.Preferences;
 
@@ -66,9 +67,11 @@ public class HelloApplication extends Application {
         java.awt.MenuItem createItem = new java.awt.MenuItem("Создание");
         createItem.addActionListener(e -> Platform.runLater(this::showCreationWindow));
 
-        // Пункт меню "Создание"
-        java.awt.MenuItem editItem = new java.awt.MenuItem("Редактирование");
-        editItem.addActionListener(e -> Platform.runLater(this::showCreationWindow));
+        // Пункт меню "Редактировать разделы"
+        java.awt.MenuItem editItem = new java.awt.MenuItem("Редактировать разделы");
+        editItem.addActionListener(e -> Platform.runLater(this::showManagementWindow));
+
+
 
         // Пункт меню "Выход"
         java.awt.MenuItem exitItem = new java.awt.MenuItem("Выход");
@@ -79,11 +82,24 @@ public class HelloApplication extends Application {
         });
 
         popup.add(createItem);
-        popup.addSeparator();
-        popup.add(editItem);
+        popup.add(editItem); // Добавляем кнопку редактирования
         popup.addSeparator();
         popup.add(exitItem);
         trayIcon.setPopupMenu(popup);
+    }
+
+    private void showManagementWindow() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/edit_window.fxml"));
+            Parent root = loader.load();
+            Stage managementStage = new Stage();
+            managementStage.setScene(new Scene(root));
+            managementStage.show();
+        } catch (IOException e) {
+            System.err.println("Ошибка загрузки FXML: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Неизвестная ошибка: " + e.getMessage());
+        }
     }
 
     private void showCreationWindow() {

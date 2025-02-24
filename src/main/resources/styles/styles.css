@@ -6,3 +6,31 @@
     -fx-border-width: 1px;
     -fx-padding: 5px;
 }
+
+/* Для кнопки удаления */
+.danger-button {
+    -fx-background-color: #e74c3c;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+
+/* Для кнопки монтирования */
+.button {
+    -fx-padding: 5 15;
+    -fx-background-radius: 5;
+}
+
+/* Для таблицы */
+.table-view {
+    -fx-box-border: transparent;
+    -fx-padding: 5;
+}
+
+.table-column {
+    -fx-alignment: CENTER;
+}
+
+/* Для чекбокса автозапуска */
+.check-box:selected .mark {
+    -fx-background-color: #2ecc71;
+}

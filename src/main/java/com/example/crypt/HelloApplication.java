@@ -66,6 +66,10 @@ public class HelloApplication extends Application {
         java.awt.MenuItem createItem = new java.awt.MenuItem("Создание");
         createItem.addActionListener(e -> Platform.runLater(this::showCreationWindow));
 
+        // Пункт меню "Создание"
+        java.awt.MenuItem editItem = new java.awt.MenuItem("Редактирование");
+        editItem.addActionListener(e -> Platform.runLater(this::showCreationWindow));
+
         // Пункт меню "Выход"
         java.awt.MenuItem exitItem = new java.awt.MenuItem("Выход");
         exitItem.addActionListener(e -> {
@@ -75,6 +79,8 @@ public class HelloApplication extends Application {
         });
 
         popup.add(createItem);
+        popup.addSeparator();
+        popup.add(editItem);
         popup.addSeparator();
         popup.add(exitItem);
         trayIcon.setPopupMenu(popup);

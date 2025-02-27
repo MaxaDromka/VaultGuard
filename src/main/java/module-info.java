@@ -3,6 +3,8 @@ module com.example.crypt {
     requires javafx.fxml;
     requires java.desktop;
     requires java.prefs;
+    requires org.jnrproject.ffi;
+    requires java.logging;
 
 
     opens com.example.crypt to javafx.fxml;

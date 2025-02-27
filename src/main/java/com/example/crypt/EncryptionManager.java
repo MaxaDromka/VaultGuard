@@ -1,23 +1,31 @@
 package com.example.crypt;
 
-import java.io.BufferedReader;
-import java.io.File;
+import jnr.ffi.Pointer;
+import jnr.ffi.Runtime;
+import java.util.logging.Logger;
+
 import java.io.IOException;
-import java.io.InputStreamReader;
 
 public class EncryptionManager {
+    private static final CryptSetup crypt = CryptSetup.load();
+    private static final Runtime runtime = Runtime.getRuntime(crypt);
+
+    //private static final Logger logger = Logger.getLogger(EncryptionManager.class.getName());
+
+    static {
+        try {
+            System.loadLibrary("cryptsetup");
+        } catch (UnsatisfiedLinkError e) {
+            System.err.println("Ошибка: libcryptsetup не найдена. Установите её с помощью 'sudo install libcryptsetup-dev'");
+            System.exit(1);
+        }
+    }
 
     /**
-     * Создает зашифрованный контейнер, аналогично VeraCrypt.
-     *
-     * @param path      Путь для создания контейнера.
-     * @param sizeMB    Размер контейнера в мегабайтах.
-     * @param name      Имя контейнера.
-     * @param algorithm Алгоритм шифрования (например, "aes-xts-plain64").
-     * @param password  Пароль для контейнера.
-     * @param fsType    Тип файловой системы (например, "ext4", "fat32").
+     * Создает зашифрованный контейнер.
      */
     public static void createContainer(
+
             String path,
             int sizeMB,
             String name,
@@ -25,80 +33,43 @@ public class EncryptionManager {
             String password,
             String fsType
     ) {
+        Pointer cd = runtime.getMemoryManager().allocateTemporary(8, true); // Указатель на crypt_device
+
         try {
-            // Создаем файл-контейнер с помощью dd
-            String containerPath = path + File.separator + name + ".container";
-            createContainerFile(containerPath, sizeMB);
+            // Инициализация контейнера
+            int result = crypt.crypt_init(cd, path);
+            if (result < 0) {
+                throw new IOException("Ошибка при инициализации: " + result);
+            }
 
-            // Инициализируем контейнер с помощью cryptsetup
-            setupLUKSContainer(containerPath, algorithm, password);
+            // Форматирование контейнера
+            result = crypt.crypt_format(cd, 2, algorithm, null, null, 0);
+            if (result < 0) {
+                throw new IOException("Ошибка при форматировании: " + result);
+            }
 
-            // Открываем контейнер и монтируем его
-            String mapperName = "crypt_" + name;
-            openLUKSContainer(containerPath, mapperName, password);
+            // Добавление ключа
+            result = crypt.crypt_keyslot_add_by_volume_key(cd, -1, null, 0, password, password.length());
+            if (result < 0) {
+                throw new IOException("Ошибка при добавлении ключа: " + result);
+            }
 
-            // Создаем файловую систему внутри контейнера
-            createFileSystem(mapperName, fsType);
+            // Создание файловой системы
+            createFileSystem(name, fsType);
 
-            // Закрываем контейнер
-            closeLUKSContainer(mapperName);
-
-            System.out.println("Контейнер успешно создан и отформатирован: " + containerPath);
-        } catch (IOException | InterruptedException e) {
-            System.err.println("Ошибка при создании контейнера: " + e.getMessage());
+            System.out.println("Контейнер успешно создан: " + path);
+        } catch (IOException e) {
+            System.err.println("Ошибка: " + e.getMessage());
+        } finally {
+            crypt.crypt_free(cd); // Освобождаем ресурсы
         }
-    }
-
-    /**
-     * Создает файл-контейнер с помощью команды dd.
-     */
-    private static void createContainerFile(String containerPath, int sizeMB) throws IOException, InterruptedException {
-        String[] ddCommand = {
-                "dd",
-                "if=/dev/zero",
-                "of=" + containerPath,
-                "bs=1M",
-                "count=" + sizeMB
-        };
-
-        executeCommand(ddCommand);
-    }
-
-    /**
-     * Инициализирует контейнер с помощью cryptsetup.
-     */
-    private static void setupLUKSContainer(String containerPath, String algorithm, String password) throws IOException, InterruptedException {
-        String[] luksFormatCommand = {
-                "cryptsetup",
-                "luksFormat",
-                containerPath,
-                "--type", "luks2",
-                "--cipher", algorithm,
-                "--key-size", "512"
-        };
-
-        executeCommandWithInput(luksFormatCommand, password + "\n");
-    }
-
-    /**
-     * Открывает контейнер и создает виртуальное устройство.
-     */
-    private static void openLUKSContainer(String containerPath, String mapperName, String password) throws IOException, InterruptedException {
-        String[] luksOpenCommand = {
-                "cryptsetup",
-                "open",
-                containerPath,
-                mapperName
-        };
-
-        executeCommandWithInput(luksOpenCommand, password + "\n");
     }
 
     /**
      * Создает файловую систему внутри контейнера.
      */
-    private static void createFileSystem(String mapperName, String fsType) throws IOException, InterruptedException {
-        String devicePath = "/dev/mapper/" + mapperName;
+    private static void createFileSystem(String name, String fsType) throws IOException {
+        String devicePath = "/dev/mapper/crypt_" + name;
         String[] mkfsCommand;
 
         switch (fsType.toLowerCase()) {
@@ -112,69 +83,15 @@ public class EncryptionManager {
                 throw new IllegalArgumentException("Неподдерживаемый тип файловой системы: " + fsType);
         }
 
-        executeCommand(mkfsCommand);
-    }
-
-    /**
-     * Закрывает контейнер.
-     */
-    private static void closeLUKSContainer(String mapperName) throws IOException, InterruptedException {
-        String[] luksCloseCommand = {
-                "cryptsetup",
-                "close",
-                mapperName
-        };
-
-        executeCommand(luksCloseCommand);
-    }
-
-    /**
-     * Выполняет команду в терминале.
-     */
-    private static void executeCommand(String[] command) throws IOException, InterruptedException {
-        ProcessBuilder processBuilder = new ProcessBuilder(command);
-        processBuilder.redirectErrorStream(true);
+        ProcessBuilder processBuilder = new ProcessBuilder(mkfsCommand);
         Process process = processBuilder.start();
-
-        // Чтение вывода команды
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                System.out.println(line);
+        try {
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                throw new IOException("Ошибка при создании файловой системы: " + exitCode);
             }
-        }
-
-        int exitCode = process.waitFor();
-        if (exitCode != 0) {
-            throw new IOException("Команда завершилась с ошибкой: " + exitCode);
-        }
-    }
-
-    /**
-     * Выполняет команду с вводом через stdin.
-     */
-    private static void executeCommandWithInput(String[] command, String input) throws IOException, InterruptedException {
-        ProcessBuilder processBuilder = new ProcessBuilder(command);
-        processBuilder.redirectErrorStream(true);
-        Process process = processBuilder.start();
-
-        // Передача ввода через stdin
-        try (var writer = process.getOutputStream()) {
-            writer.write(input.getBytes());
-            writer.flush();
-        }
-
-        // Чтение вывода команды
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                System.out.println(line);
-            }
-        }
-
-        int exitCode = process.waitFor();
-        if (exitCode != 0) {
-            throw new IOException("Команда завершилась с ошибкой: " + exitCode);
+        } catch (InterruptedException e) {
+            throw new IOException("Процесс прерван: " + e.getMessage());
         }
     }
 }

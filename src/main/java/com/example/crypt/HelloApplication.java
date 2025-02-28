@@ -41,6 +41,7 @@ public class HelloApplication extends Application {
 
     @Override
     public void start(Stage primaryStage) {
+        Platform.setImplicitExit(false);
         setupSystemTray();
     }
 
@@ -120,6 +121,8 @@ public class HelloApplication extends Application {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+
     }
 
     /*private void saveToConfig(String path, int size) {

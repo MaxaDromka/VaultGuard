@@ -16,7 +16,6 @@
     <GridPane>
         <padding><Insets topRightBottomLeft="10" /></padding>
 
-        <!-- Disk Selection -->
         <Label text="Выберите диск:" GridPane.columnIndex="0" GridPane.rowIndex="0">
             <tooltip>
                 <Tooltip text="Выберите диск для создания зашифрованного раздела" />
@@ -28,7 +27,6 @@
             </tooltip>
         </ComboBox>
 
-        <!-- Size Slider -->
         <Label text="Размер под шифрованные данные (МБ):" GridPane.columnIndex="0" GridPane.rowIndex="1">
             <tooltip>
                 <Tooltip text="Укажите размер зашифрованного контейнера в мегабайтах" />
@@ -39,13 +37,12 @@
                 <Tooltip text="Измените размер зашифрованного контейнера с помощью ползунка" />
             </tooltip>
         </Slider>
-        <Label fx:id="sizeValue" text="1000" GridPane.columnIndex="1" GridPane.rowIndex="2">
+        <TextField fx:id="sizeField" text="1000" GridPane.columnIndex="1" GridPane.rowIndex="2">
             <tooltip>
-                <Tooltip text="Текущий выбранный размер в мегабайтах"/>
+                <Tooltip text="Введите размер вручную или используйте ползунок"/>
             </tooltip>
-        </Label>
+        </TextField>
 
-        <!-- Name Field -->
         <Label text="Имя раздела:" GridPane.columnIndex="0" GridPane.rowIndex="3">
             <tooltip>
                 <Tooltip text="Введите уникальное имя для вашего зашифрованного раздела"/>
@@ -57,7 +54,6 @@
             </tooltip>
         </TextField>
 
-        <!-- Buttons -->
         <Button onAction="#handleCancel" text="Выход" GridPane.columnIndex="0" GridPane.rowIndex="4">
             <tooltip>
                 <Tooltip text="Закрыть окно без сохранения настроек"/>

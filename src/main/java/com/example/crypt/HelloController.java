@@ -21,7 +21,7 @@ import java.util.List;
 public class HelloController {
     @FXML private ComboBox<String> diskBox;
     @FXML private Slider sizeSlider;
-    @FXML private Label sizeValue;
+    @FXML private TextField sizeField;
     @FXML private TextField nameField;
     @FXML private Button nextBtn;
 
@@ -34,14 +34,29 @@ public class HelloController {
         diskBox.getItems().addAll(disks);
         diskBox.getSelectionModel().selectFirst();
 
-        // Обновляем значение размера
+        sizeSlider.setMin(100);
+        sizeSlider.setMax(5000);
+        sizeSlider.setValue(1000);
+
+        // Синхронизация ползунка и текстового поля
         sizeSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
-            sizeValue.setText(String.format("%d", newVal.intValue()));
-            validateFields();
+            sizeField.setText(String.format("%.0f", newVal)); // Обновляем текстовое поле
+        });
+
+        sizeField.textProperty().addListener((obs, oldVal, newVal) -> {
+            try {
+                double value = Double.parseDouble(newVal); // Парсим значение из текстового поля
+                if (value >= sizeSlider.getMin() && value <= sizeSlider.getMax()) {
+                    sizeSlider.setValue(value); // Обновляем ползунок
+                }
+            } catch (NumberFormatException e) {
+                // Игнорируем некорректный ввод
+            }
         });
 
         // Валидация полей
         nameField.textProperty().addListener((obs, oldVal, newVal) -> validateFields());
+        sizeField.textProperty().addListener((obs, oldVal, newVal) -> validateFields());
     }
 
     private List<String> getAvailableDisks() {

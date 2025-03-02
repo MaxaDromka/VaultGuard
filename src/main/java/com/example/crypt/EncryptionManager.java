@@ -2,15 +2,11 @@ package com.example.crypt;
 
 import jnr.ffi.Pointer;
 import jnr.ffi.Runtime;
-import java.util.logging.Logger;
-
 import java.io.IOException;
 
 public class EncryptionManager {
     private static final CryptSetup crypt = CryptSetup.load();
     private static final Runtime runtime = Runtime.getRuntime(crypt);
-
-    //private static final Logger logger = Logger.getLogger(EncryptionManager.class.getName());
 
     static {
         try {
@@ -25,7 +21,6 @@ public class EncryptionManager {
      * Создает зашифрованный контейнер.
      */
     public static void createContainer(
-
             String path,
             int sizeMB,
             String name,
@@ -60,6 +55,62 @@ public class EncryptionManager {
             System.out.println("Контейнер успешно создан: " + path);
         } catch (IOException e) {
             System.err.println("Ошибка: " + e.getMessage());
+        } finally {
+            crypt.crypt_free(cd); // Освобождаем ресурсы
+        }
+    }
+
+    /**
+     * Монтирует зашифрованный контейнер.
+     */
+    public static void mountContainer(String path, String name, String password) throws IOException {
+        Pointer cd = runtime.getMemoryManager().allocateTemporary(8, true);
+
+        try {
+            // Инициализация контейнера
+            int result = crypt.crypt_init(cd, path);
+            if (result < 0) {
+                throw new IOException("Ошибка при инициализации: " + result);
+            }
+
+            // Загрузка заголовка LUKS
+            result = crypt.crypt_load(cd, 0, null); // 0 означает LUKS любого типа
+            if (result < 0) {
+                throw new IOException("Ошибка при загрузке заголовка: " + result);
+            }
+
+            // Активация контейнера
+            result = crypt.crypt_activate_by_passphrase(cd, name, -1, password, password.length(), 0);
+            if (result < 0) {
+                throw new IOException("Ошибка при монтировании: " + result);
+            }
+
+            System.out.println("Контейнер успешно смонтирован: " + name);
+        } finally {
+            crypt.crypt_free(cd); // Освобождаем ресурсы
+        }
+    }
+
+    /**
+     * Размонтирует зашифрованный контейнер.
+     */
+    public static void unmountContainer(String name) throws IOException {
+        Pointer cd = runtime.getMemoryManager().allocateTemporary(8, true);
+
+        try {
+            // Инициализация контейнера по имени
+            int result = crypt.crypt_init_by_name(cd, name);
+            if (result < 0) {
+                throw new IOException("Ошибка при инициализации: " + result);
+            }
+
+            // Деактивация контейнера
+            result = crypt.crypt_deactivate(cd, name);
+            if (result < 0) {
+                throw new IOException("Ошибка при размонтировании: " + result);
+            }
+
+            System.out.println("Контейнер успешно размонтирован: " + name);
         } finally {
             crypt.crypt_free(cd); // Освобождаем ресурсы
         }

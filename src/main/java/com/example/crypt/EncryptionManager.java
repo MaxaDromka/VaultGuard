@@ -2,6 +2,8 @@ package com.example.crypt;
 
 import jnr.ffi.Pointer;
 import jnr.ffi.Runtime;
+
+import java.io.File;
 import java.io.IOException;
 
 public class EncryptionManager {
@@ -12,7 +14,7 @@ public class EncryptionManager {
         try {
             System.loadLibrary("cryptsetup");
         } catch (UnsatisfiedLinkError e) {
-            System.err.println("Ошибка: libcryptsetup не найдена. Установите её с помощью 'sudo install libcryptsetup-dev'");
+            System.err.println("Ошибка: cryptsetup-devel не найдена. Установите её с помощью 'sudo dnf install cryptsetup-devel'");
             System.exit(1);
         }
     }
@@ -27,11 +29,20 @@ public class EncryptionManager {
             String algorithm,
             String password,
             String fsType
-    ) {
-        Pointer cd = runtime.getMemoryManager().allocateTemporary(8, true); // Указатель на crypt_device
+    ) throws IOException {
+
+        File device = new File(path);
+        if (!device.exists()) {
+            throw new IOException("Устройство " + path + " не существует!");
+        }
+
+        //Pointer cd = runtime.getMemoryManager().allocateTemporary(8, true); // Указатель на crypt_device
+
+        Pointer cd = null;
 
         try {
             // Инициализация контейнера
+            cd = runtime.getMemoryManager().allocateTemporary(8, true);
             int result = crypt.crypt_init(cd, path);
             if (result < 0) {
                 throw new IOException("Ошибка при инициализации: " + result);
@@ -56,7 +67,9 @@ public class EncryptionManager {
         } catch (IOException e) {
             System.err.println("Ошибка: " + e.getMessage());
         } finally {
-            crypt.crypt_free(cd); // Освобождаем ресурсы
+            if (cd != null) {
+                crypt.crypt_free(cd);
+            }
         }
     }
 

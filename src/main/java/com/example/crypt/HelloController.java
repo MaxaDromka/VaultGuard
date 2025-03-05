@@ -96,7 +96,9 @@ public class HelloController {
         String name = nameField.getText();
 
         // Формируем путь к контейнеру
-        String containerPath = disk + File.separator + name + ".container";
+        //String containerPath = disk + File.separator + name + ".container";
+        String containerPath = disk;
+
 
         // Переходим к следующему окну
         try {

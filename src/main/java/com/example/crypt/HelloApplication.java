@@ -73,6 +73,9 @@ public class HelloApplication extends Application {
         editItem.addActionListener(e -> Platform.runLater(this::showManagementWindow));
 
 
+        // Пункт меню "Редактировать разделы"
+        java.awt.MenuItem backupItem = new java.awt.MenuItem("Бэкап");
+        backupItem.addActionListener(e -> Platform.runLater(this::showManagementWindow));
 
         // Пункт меню "Выход"
         java.awt.MenuItem exitItem = new java.awt.MenuItem("Выход");
@@ -84,8 +87,10 @@ public class HelloApplication extends Application {
 
         popup.add(createItem);
         popup.add(editItem); // Добавляем кнопку редактирования
+        popup.add(backupItem);
         popup.addSeparator();
         popup.add(exitItem);
+
         trayIcon.setPopupMenu(popup);
     }
 

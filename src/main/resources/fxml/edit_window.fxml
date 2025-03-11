@@ -6,69 +6,89 @@
 <?import javafx.scene.control.cell.PropertyValueFactory?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Tooltip?>
 
-<BorderPane prefHeight="486.0" prefWidth="892.0" style="-fx-padding: 20;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.crypt.EditController">
+<BorderPane prefHeight="600.0" prefWidth="1000.0" style="-fx-background-color: #f5f5f5;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.crypt.EditController">
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <top>
+        <Label text="Управление зашифрованными разделами" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50; -fx-padding: 0 0 20 0;"/>
+    </top>
 
     <center>
-        <TableView fx:id="partitionsTable" style="-fx-font-size: 14px;">
+        <TableView fx:id="partitionsTable" style="-fx-font-size: 14px; -fx-background-radius: 5;">
+            <columnResizePolicy>
+                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+            </columnResizePolicy>
             <columns>
-                <!-- Кнопка монтирования -->
-                <TableColumn text="Действие">
+                <TableColumn text="Действие" style="-fx-alignment: CENTER;">
                     <cellValueFactory>
                         <PropertyValueFactory property="mountButton" />
                     </cellValueFactory>
                 </TableColumn>
 
-                <!-- Название раздела -->
-                <TableColumn minWidth="120" text="Название">
+                <TableColumn text="Название" style="-fx-alignment: CENTER-LEFT;" minWidth="120">
                     <cellValueFactory>
                         <PropertyValueFactory property="name" />
                     </cellValueFactory>
                 </TableColumn>
 
-                <!-- Размер -->
-                <TableColumn minWidth="100" text="Размер (МБ)">
+                <TableColumn text="Размер (МБ)" style="-fx-alignment: CENTER;" minWidth="100">
                     <cellValueFactory>
                         <PropertyValueFactory property="size" />
                     </cellValueFactory>
                 </TableColumn>
 
-                <!-- Путь -->
-                <TableColumn minWidth="200.0" text="Путь">
+                <TableColumn text="Путь" style="-fx-alignment: CENTER-LEFT;" minWidth="200.0">
                     <cellValueFactory>
                         <PropertyValueFactory property="path" />
                     </cellValueFactory>
                 </TableColumn>
 
-                <!-- Метод шифрования -->
-                <TableColumn minWidth="150" text="Шифрование">
+                <TableColumn text="Шифрование" style="-fx-alignment: CENTER;" minWidth="150">
                     <cellValueFactory>
                         <PropertyValueFactory property="encryptionMethod" />
                     </cellValueFactory>
                 </TableColumn>
 
-                <!-- Автозапуск -->
-                <TableColumn minWidth="100.0" text="Автозапуск">
+                <TableColumn text="Автозапуск" style="-fx-alignment: CENTER;" minWidth="100.0">
                     <cellValueFactory>
                         <PropertyValueFactory property="autoMount" />
                     </cellValueFactory>
                 </TableColumn>
 
-                <!-- Удаление -->
-                <TableColumn minWidth="100" text="Управление">
+                <TableColumn text="Управление" style="-fx-alignment: CENTER;" minWidth="100">
                     <cellValueFactory>
                         <PropertyValueFactory property="deleteButton" />
                     </cellValueFactory>
                 </TableColumn>
             </columns>
+
+            <style>
+                -fx-background-color: white;
+                -fx-background-radius: 10;
+                -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 10, 0, 0, 3);
+            </style>
         </TableView>
     </center>
 
     <bottom>
-        <HBox spacing="20" style="-fx-padding: 20 0 0 0;">
-            <Button onAction="#handleApply" style="-fx-base: #2ecc71; -fx-font-weight: bold;" text="Применить изменения" />
+        <HBox spacing="20" style="-fx-padding: 20 0 0 0;" alignment="CENTER_RIGHT">
+            <Button onAction="#handleApply" style="-fx-background-color: #2ecc71; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 10 20;" text="Применить изменения">
+                <tooltip>
+                    <Tooltip text="Сохранить все внесенные изменения"/>
+                </tooltip>
+            </Button>
 
-            <Button onAction="#handleClose" style="-fx-base: #e74c3c;" text="Закрыть" />
+            <Button onAction="#handleClose" style="-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-background-radius: 5; -fx-padding: 10 20;" text="Закрыть">
+                <tooltip>
+                    <Tooltip text="Закрыть окно редактирования"/>
+                </tooltip>
+            </Button>
         </HBox>
     </bottom>
 </BorderPane>

@@ -1,20 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
-<?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.control.cell.PropertyValueFactory?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.VBox?>
 
-<BorderPane xmlns="http://javafx.com/javafx/17"
-            xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.example.crypt.EditController"
-            style="-fx-padding: 20;">
+<BorderPane prefHeight="486.0" prefWidth="892.0" style="-fx-padding: 20;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.crypt.EditController">
 
     <center>
         <TableView fx:id="partitionsTable" style="-fx-font-size: 14px;">
@@ -22,49 +15,49 @@
                 <!-- Кнопка монтирования -->
                 <TableColumn text="Действие">
                     <cellValueFactory>
-                        <PropertyValueFactory property="mountButton"/>
+                        <PropertyValueFactory property="mountButton" />
                     </cellValueFactory>
                 </TableColumn>
 
                 <!-- Название раздела -->
-                <TableColumn text="Название" minWidth="120">
+                <TableColumn minWidth="120" text="Название">
                     <cellValueFactory>
-                        <PropertyValueFactory property="name"/>
+                        <PropertyValueFactory property="name" />
                     </cellValueFactory>
                 </TableColumn>
 
                 <!-- Размер -->
-                <TableColumn text="Размер (МБ)" minWidth="100">
+                <TableColumn minWidth="100" text="Размер (МБ)">
                     <cellValueFactory>
-                        <PropertyValueFactory property="size"/>
+                        <PropertyValueFactory property="size" />
                     </cellValueFactory>
                 </TableColumn>
 
                 <!-- Путь -->
-                <TableColumn text="Путь" minWidth="200">
+                <TableColumn minWidth="200.0" text="Путь">
                     <cellValueFactory>
-                        <PropertyValueFactory property="path"/>
+                        <PropertyValueFactory property="path" />
                     </cellValueFactory>
                 </TableColumn>
 
                 <!-- Метод шифрования -->
-                <TableColumn text="Шифрование" minWidth="150">
+                <TableColumn minWidth="150" text="Шифрование">
                     <cellValueFactory>
-                        <PropertyValueFactory property="encryptionMethod"/>
+                        <PropertyValueFactory property="encryptionMethod" />
                     </cellValueFactory>
                 </TableColumn>
 
                 <!-- Автозапуск -->
-                <TableColumn text="Автозапуск" minWidth="100">
+                <TableColumn minWidth="100.0" text="Автозапуск">
                     <cellValueFactory>
-                        <PropertyValueFactory property="autoMount"/>
+                        <PropertyValueFactory property="autoMount" />
                     </cellValueFactory>
                 </TableColumn>
 
                 <!-- Удаление -->
-                <TableColumn text="Управление" minWidth="100">
+                <TableColumn minWidth="100" text="Управление">
                     <cellValueFactory>
-                        <PropertyValueFactory property="deleteButton"/>
+                        <PropertyValueFactory property="deleteButton" />
                     </cellValueFactory>
                 </TableColumn>
             </columns>
@@ -73,13 +66,9 @@
 
     <bottom>
         <HBox spacing="20" style="-fx-padding: 20 0 0 0;">
-            <Button text="Применить изменения"
-                    style="-fx-base: #2ecc71; -fx-font-weight: bold;"
-                    onAction="#handleApply"/>
+            <Button onAction="#handleApply" style="-fx-base: #2ecc71; -fx-font-weight: bold;" text="Применить изменения" />
 
-            <Button text="Закрыть"
-                    style="-fx-base: #e74c3c;"
-                    onAction="#handleClose"/>
+            <Button onAction="#handleClose" style="-fx-base: #e74c3c;" text="Закрыть" />
         </HBox>
     </bottom>
 </BorderPane>

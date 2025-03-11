@@ -1,6 +1,9 @@
 package com.example.crypt;
 
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
 
@@ -75,6 +78,7 @@ public class EncryptionSettingsController {
         // Закрываем текущее окно и возвращаемся к предыдущему
         Stage stage = (Stage) encryptBtn.getScene().getWindow();
         stage.close();
+
     }
 
     @FXML

@@ -11,81 +11,70 @@
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.text.Font?>
 
-<VBox prefHeight="400.0" prefWidth="700.0" spacing="20" style="-fx-background-color: #f5f5f5;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.crypt.HelloController">
-    <padding><Insets topRightBottomLeft="20" /></padding>
-    
-    <Label text="Создание зашифрованного раздела" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;">
-        <padding><Insets bottom="20" /></padding>
-    </Label>
+<VBox prefHeight="280.0" prefWidth="600.0" spacing="10" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.crypt.HelloController">
+    <GridPane>
+        <padding><Insets topRightBottomLeft="10" /></padding>
 
-    <GridPane vgap="15" hgap="20" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 20;">
-        <padding><Insets topRightBottomLeft="20" /></padding>
-
-        <Label text="Выберите диск:" GridPane.columnIndex="0" GridPane.rowIndex="0" style="-fx-font-size: 14px; -fx-font-weight: bold;">
+        <Label text="Выберите диск:" GridPane.columnIndex="0" GridPane.rowIndex="0">
             <tooltip>
                 <Tooltip text="Выберите диск для создания зашифрованного раздела" />
             </tooltip>
         </Label>
-        <ComboBox fx:id="diskBox" prefWidth="300" GridPane.columnIndex="1" GridPane.rowIndex="0" style="-fx-background-radius: 5;">
-            <tooltip>
+        <ComboBox fx:id="diskBox" GridPane.columnIndex="1" GridPane.rowIndex="0">
+        <tooltip>           
                 <Tooltip text="Список доступных дисков" />
             </tooltip>
         </ComboBox>
 
-        <Label text="Размер под шифрованные данные (МБ):" GridPane.columnIndex="0" GridPane.rowIndex="1" style="-fx-font-size: 14px; -fx-font-weight: bold;">
+        <Label text="Размер под шифрованные данные (МБ):" GridPane.columnIndex="0" GridPane.rowIndex="1">
             <tooltip>
                 <Tooltip text="Укажите размер зашифрованного контейнера в мегабайтах" />
             </tooltip>
         </Label>
-        <Slider fx:id="sizeSlider" min="100" max="5000" value="1000" prefWidth="300" GridPane.columnIndex="1" GridPane.rowIndex="1">
+        <Slider fx:id="sizeSlider" min="100" max="5000" value="1000" GridPane.columnIndex="1" GridPane.rowIndex="1">
             <tooltip>
                 <Tooltip text="Измените размер зашифрованного контейнера с помощью ползунка" />
             </tooltip>
         </Slider>
-        <TextField fx:id="sizeField" text="1000" prefWidth="300" GridPane.columnIndex="1" GridPane.rowIndex="2" style="-fx-background-radius: 5;">
+        <TextField fx:id="sizeField" text="1000" GridPane.columnIndex="1" GridPane.rowIndex="2">
             <tooltip>
                 <Tooltip text="Введите размер вручную или используйте ползунок"/>
             </tooltip>
         </TextField>
 
-        <Label text="Имя раздела:" GridPane.columnIndex="0" GridPane.rowIndex="3" style="-fx-font-size: 14px; -fx-font-weight: bold;">
+        <Label text="Имя раздела:" GridPane.columnIndex="0" GridPane.rowIndex="3">
             <tooltip>
                 <Tooltip text="Введите уникальное имя для вашего зашифрованного раздела"/>
             </tooltip>
         </Label>
-        <TextField fx:id="nameField" prefWidth="300" GridPane.columnIndex="1" GridPane.rowIndex="3" style="-fx-background-radius: 5;">
+        <TextField fx:id="nameField" GridPane.columnIndex="1" GridPane.rowIndex="3">
             <tooltip>
                 <Tooltip text="Имя будет использоваться для идентификации раздела"/>
             </tooltip>
         </TextField>
 
-        <HBox spacing="10" alignment="CENTER_RIGHT" GridPane.columnIndex="0" GridPane.columnSpan="2" GridPane.rowIndex="4">
-            <padding><Insets top="20" /></padding>
-            <Button onAction="#handleCancel" text="Выход" style="-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-background-radius: 5; -fx-padding: 8 15;">
-                <tooltip>
-                    <Tooltip text="Закрыть окно без сохранения настроек"/>
-                </tooltip>
-            </Button>
-            <Button fx:id="nextBtn" onAction="#handleNext" disable="true" text="Далее" style="-fx-background-color: #3498db; -fx-text-fill: white; -fx-background-radius: 5; -fx-padding: 8 15;">
-                <tooltip>
-                    <Tooltip text="Перейти к следующим настройкам шифрования"/>
-                </tooltip>
-            </Button>
-        </HBox>
+        <Button onAction="#handleCancel" text="Выход" GridPane.columnIndex="0" GridPane.rowIndex="4">
+            <tooltip>
+                <Tooltip text="Закрыть окно без сохранения настроек"/>
+            </tooltip>
+        </Button>
+        <Button fx:id="nextBtn" onAction="#handleNext" disable="true" text="Далее" GridPane.columnIndex="1" GridPane.rowIndex="4">
+            <tooltip>
+                <Tooltip text="Перейти к следующим настройкам шифрования"/>
+            </tooltip>
+        </Button>
 
         <columnConstraints>
-            <ColumnConstraints minWidth="200" />
-            <ColumnConstraints minWidth="300" />
+            <ColumnConstraints />
+            <ColumnConstraints />
         </columnConstraints>
         <rowConstraints>
-            <RowConstraints minHeight="40" />
-            <RowConstraints minHeight="40" />
-            <RowConstraints minHeight="40" />
-            <RowConstraints minHeight="40" />
-            <RowConstraints minHeight="60" />
+            <RowConstraints />
+            <RowConstraints />
+            <RowConstraints />
+            <RowConstraints />
+            <RowConstraints />
         </rowConstraints>
     </GridPane>
 </VBox>

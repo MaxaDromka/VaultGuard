@@ -1,15 +1,13 @@
 package com.example.crypt;
 
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.Slider;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.stage.Stage;
+
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -117,5 +115,15 @@ public class HelloController {
 
     public void setStage(Stage stage) {
         this.stage = stage;
+    }
+
+
+    @FXML
+    private TextArea helpTextArea;
+
+    @FXML
+    private void handleCloseHelp(ActionEvent event) {
+        Stage stage = (Stage) ((Button) event.getSource()).getScene().getWindow();
+        stage.close();
     }
 }

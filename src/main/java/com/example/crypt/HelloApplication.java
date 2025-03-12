@@ -9,6 +9,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.stage.DirectoryChooser;
@@ -77,6 +78,12 @@ public class HelloApplication extends Application {
         java.awt.MenuItem backupItem = new java.awt.MenuItem("Бэкап");
         backupItem.addActionListener(e -> Platform.runLater(this::showManagementWindow));
 
+        // Пункт меню "Справка"
+        java.awt.MenuItem helpItem = new java.awt.MenuItem("Справка");
+        helpItem.addActionListener(e -> Platform.runLater(this::showHelpWindow));
+
+
+
         // Пункт меню "Выход"
         java.awt.MenuItem exitItem = new java.awt.MenuItem("Выход");
         exitItem.addActionListener(e -> {
@@ -88,6 +95,7 @@ public class HelloApplication extends Application {
         popup.add(createItem);
         popup.add(editItem); // Добавляем кнопку редактирования
         popup.add(backupItem);
+        popup.add(helpItem);
         popup.addSeparator();
         popup.add(exitItem);
 
@@ -126,8 +134,26 @@ public class HelloApplication extends Application {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
 
-
+    private void showHelpWindow() {
+        try {
+            FXMLLoader loader = new FXMLLoader();
+            URL fxmlUrl = getClass().getResource("/fxml/help_window.fxml");
+            loader.setLocation(fxmlUrl);
+            Parent root = loader.load();
+            
+            Stage helpStage = new Stage();
+            helpStage.setTitle("Справка");
+            helpStage.setScene(new Scene(root));
+            helpStage.show();
+        } catch (IOException e) {
+            System.err.println("Ошибка загрузки FXML: " + e.getMessage());
+            e.printStackTrace();
+        } catch (Exception e) {
+            System.err.println("Неизвестная ошибка: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     /*private void saveToConfig(String path, int size) {

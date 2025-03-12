@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.VBox?>
+
+<?import javafx.scene.control.Tooltip?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.RowConstraints?>
+<VBox prefHeight="400.0" prefWidth="600.0" spacing="10" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.crypt.HelpController">
+    <GridPane>
+        <padding><Insets topRightBottomLeft="10" /></padding>
+
+        <Label text="Справка" GridPane.columnIndex="0" GridPane.rowIndex="0" style="-fx-font-size: 16px; -fx-font-weight: bold;">
+            <tooltip>
+                <Tooltip text="Информация о приложении и его функциях" />
+            </tooltip>
+        </Label>
+
+        <TextArea fx:id="helpText" editable="false" wrapText="true" GridPane.columnIndex="0" GridPane.rowIndex="1" prefHeight="300.0" prefWidth="580.0">
+            <tooltip>
+                <Tooltip text="Здесь вы найдете информацию о том, как использовать приложение" />
+            </tooltip>
+        </TextArea>
+
+        <Button onAction="#handleClose" text="Закрыть" GridPane.columnIndex="0" GridPane.rowIndex="2">
+            <tooltip>
+                <Tooltip text="Закрыть окно справки"/>
+            </tooltip>
+        </Button>
+
+        <columnConstraints>
+            <ColumnConstraints />
+        </columnConstraints>
+        <rowConstraints>
+            <RowConstraints />
+            <RowConstraints />
+            <RowConstraints />
+        </rowConstraints>
+    </GridPane>
+</VBox>

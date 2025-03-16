@@ -9,6 +9,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
@@ -73,6 +74,9 @@ public class HelloApplication extends Application {
         java.awt.MenuItem editItem = new java.awt.MenuItem("Редактировать разделы");
         editItem.addActionListener(e -> Platform.runLater(this::showManagementWindow));
 
+        // Добавляем пункт меню для GPG операций
+        java.awt.MenuItem gpgItem = new java.awt.MenuItem("GPG Шифрование");
+        gpgItem.addActionListener(e -> Platform.runLater(this::showGPGWindow));
 
         // Пункт меню "Редактировать разделы"
         java.awt.MenuItem backupItem = new java.awt.MenuItem("Бэкап");
@@ -96,6 +100,7 @@ public class HelloApplication extends Application {
         popup.add(editItem); // Добавляем кнопку редактирования
         popup.add(backupItem);
         popup.add(helpItem);
+        popup.add(gpgItem);
         popup.addSeparator();
         popup.add(exitItem);
 
@@ -154,6 +159,22 @@ public class HelloApplication extends Application {
             System.err.println("Неизвестная ошибка: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    private void showGPGWindow() {
+        Platform.runLater(() -> {
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/gpg_window.fxml"));
+                Parent root = loader.load();
+                Stage stage = new Stage();
+                stage.setTitle("GPG Шифрование");
+                stage.setScene(new Scene(root));
+                stage.show();
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.out.println("Не удалось открыть окно GPG операций");
+            }
+        });
     }
 
     /*private void saveToConfig(String path, int size) {

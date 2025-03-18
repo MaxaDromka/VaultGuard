@@ -184,6 +184,6 @@ public class HelloApplication extends Application {
             writer.write(String.format("size = %d%n%n", size));
         } catch (Exception e) {
             e.printStackTrace();
-        }
+        }+-
     }*/
 }

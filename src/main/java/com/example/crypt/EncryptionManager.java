@@ -31,7 +31,8 @@ public class EncryptionManager {
             String password,
             String fsType
     ) throws IOException {
-        String containerPath = path + File.separator + name + ".container";
+        //String containerPath = path + File.separator + name + ".container";
+        String containerPath = System.getProperty("user.home") + File.separator + name + ".container";
         String loopDevice = null;
         Pointer cd = null;
 
@@ -48,7 +49,7 @@ public class EncryptionManager {
             // 2. Создание loop-устройства
             logger.info("Создание loop-устройства");
             Process losetup = java.lang.Runtime.getRuntime().exec(
-                String.format("losetup -f --show %s", containerPath)
+                String.format(" losetup -f  %s", containerPath)
             );
             loopDevice = readProcessOutput(losetup).trim();
             if (loopDevice.isEmpty()) {

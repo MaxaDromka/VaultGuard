@@ -32,13 +32,17 @@ public class EncryptionManager {
             String fsType
     ) throws IOException {
         //String containerPath = path + File.separator + name + ".container";
-        String containerPath = System.getProperty("user.home") + File.separator + name + ".container";
+        //String containerPath = System.getProperty("user.home") + File.separator + name + ".container";
+        String userHome = System.getProperty("user.home");
+        String containerPath = userHome + File.separator + name + ".container";
         String loopDevice = null;
         Pointer cd = null;
 
         try {
             // 1. Создание файла-контейнера
             logger.info("Создание файла-контейнера размером " + sizeMB + "MB");
+            logger.info("Путь к контейнеру: " + containerPath);
+            logger.info("Алгоритм шифрования: " + algorithm);
             Process truncate = java.lang.Runtime.getRuntime().exec(
                 String.format("truncate -s %dM %s", sizeMB, containerPath)
             );
@@ -49,7 +53,7 @@ public class EncryptionManager {
             // 2. Создание loop-устройства
             logger.info("Создание loop-устройства");
             Process losetup = java.lang.Runtime.getRuntime().exec(
-                String.format(" losetup -f  %s", containerPath)
+                String.format("losetup -f", containerPath)
             );
             loopDevice = readProcessOutput(losetup).trim();
             if (loopDevice.isEmpty()) {

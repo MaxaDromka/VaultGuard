@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox spacing="10" style="-fx-background-color: #f0f0f0;"
+      xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.example.crypt.AutomationController">
+    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+
+    <Label text="Управление автоматизацией и резервным копированием" 
+           style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
+
+    <TabPane VBox.vgrow="ALWAYS">
+        <!-- Вкладка автоматизации -->
+        <Tab text="Автоматизация" closable="false">
+            <VBox spacing="10">
+                <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+
+                <GridPane vgap="10" hgap="10">
+                    <Label text="Контейнер:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                    <ComboBox fx:id="containerBox" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+                    <Label text="Пароль:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                    <PasswordField fx:id="passwordField" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+                    <CheckBox fx:id="autoStartCheck" text="Автоматически монтировать при запуске" 
+                             GridPane.rowIndex="2" GridPane.columnIndex="0" GridPane.columnSpan="2"/>
+
+                    <Label text="Расписание монтирования:" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                    <HBox spacing="5" GridPane.rowIndex="3" GridPane.columnIndex="1">
+                        <DatePicker fx:id="scheduleDatePicker"/>
+                        <ComboBox fx:id="scheduleHourBox" prefWidth="60"/>
+                        <Label text=":"/>
+                        <ComboBox fx:id="scheduleMinuteBox" prefWidth="60"/>
+                    </HBox>
+
+                    <CheckBox fx:id="usbMountCheck" text="Монтировать при подключении USB" 
+                             GridPane.rowIndex="4" GridPane.columnIndex="0" GridPane.columnSpan="2"/>
+
+                    <Label text="USB устройство:" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+                    <ComboBox fx:id="usbDeviceBox" GridPane.rowIndex="5" GridPane.columnIndex="1"/>
+                </GridPane>
+
+                <Button fx:id="saveAutomationButton" text="Сохранить настройки" 
+                        onAction="#handleSaveAutomation" 
+                        style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
+            </VBox>
+        </Tab>
+
+        <!-- Вкладка резервного копирования -->
+        <Tab text="Резервное копирование" closable="false">
+            <VBox spacing="10">
+                <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+
+                <GridPane vgap="10" hgap="10">
+                    <Label text="Контейнер:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                    <ComboBox fx:id="backupContainerBox" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+                    <Label text="Расписание резервного копирования:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                    <HBox spacing="5" GridPane.rowIndex="1" GridPane.columnIndex="1">
+                        <DatePicker fx:id="backupDatePicker"/>
+                        <ComboBox fx:id="backupHourBox" prefWidth="60"/>
+                        <Label text=":"/>
+                        <ComboBox fx:id="backupMinuteBox" prefWidth="60"/>
+                    </HBox>
+                </GridPane>
+
+                <HBox spacing="10">
+                    <Button fx:id="createBackupButton" text="Создать резервную копию" 
+                            onAction="#handleCreateBackup"
+                            style="-fx-background-color: #2196F3; -fx-text-fill: white;"/>
+                    
+                    <Button fx:id="restoreBackupButton" text="Восстановить из резервной копии" 
+                            onAction="#handleRestoreBackup"
+                            style="-fx-background-color: #FF9800; -fx-text-fill: white;"/>
+                    
+                    <Button fx:id="saveScheduleButton" text="Сохранить расписание" 
+                            onAction="#handleSaveSchedule"
+                            style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
+                </HBox>
+
+                <TableView fx:id="backupTable" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="dateColumn" text="Дата" prefWidth="150"/>
+                        <TableColumn fx:id="sizeColumn" text="Размер" prefWidth="100"/>
+                        <TableColumn fx:id="statusColumn" text="Статус" prefWidth="100"/>
+                    </columns>
+                </TableView>
+            </VBox>
+        </Tab>
+    </TabPane>
+</VBox> 

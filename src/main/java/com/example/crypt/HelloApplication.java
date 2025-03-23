@@ -21,6 +21,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
 public class HelloApplication extends Application {
@@ -74,6 +76,9 @@ public class HelloApplication extends Application {
         java.awt.MenuItem editItem = new java.awt.MenuItem("Редактировать разделы");
         editItem.addActionListener(e -> Platform.runLater(this::showManagementWindow));
 
+        java.awt.MenuItem automationItem = new java.awt.MenuItem("Автоматизация и резервное копирование");
+        automationItem.addActionListener(e -> Platform.runLater(this::showAutomationWindow));
+
         // Добавляем пункт меню для GPG операций
         java.awt.MenuItem gpgItem = new java.awt.MenuItem("GPG Шифрование");
         gpgItem.addActionListener(e -> Platform.runLater(this::showGPGWindow));
@@ -98,6 +103,7 @@ public class HelloApplication extends Application {
 
         popup.add(createItem);
         popup.add(editItem); // Добавляем кнопку редактирования
+        popup.add(automationItem);
         popup.add(backupItem);
         popup.add(helpItem);
         popup.add(gpgItem);
@@ -175,6 +181,21 @@ public class HelloApplication extends Application {
                 System.out.println("Не удалось открыть окно GPG операций");
             }
         });
+    }
+    private static final Logger logger = Logger.getLogger(HelloApplication.class.getName());
+
+    private void showAutomationWindow() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/automation_window.fxml"));
+            Parent root = loader.load();
+
+            Stage stage = new Stage();
+            stage.setTitle("Автоматизация и резервное копирование");
+            stage.setScene(new Scene(root));
+            stage.show();
+        } catch (IOException e) {
+            logger.log(Level.SEVERE, "Ошибка при открытии окна автоматизации", e);
+        }
     }
 
     /*private void saveToConfig(String path, int size) {

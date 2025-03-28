@@ -8,7 +8,7 @@ import java.util.logging.Logger;
 
 public class EncryptionManager {
     private static final CryptSetup crypt = CryptSetup.load();
-    private static final Runtime runtime = Runtime.getSystemRuntime();
+    private static final Runtime runtime = Runtime.getRuntime(crypt.getClass().getClassLoader());
     private static final Logger logger = Logger.getLogger(EncryptionManager.class.getName());
 
     static {
@@ -17,22 +17,6 @@ public class EncryptionManager {
         } catch (UnsatisfiedLinkError e) {
             System.err.println("Ошибка: cryptsetup-devel не найдена. Установите её с помощью 'sudo dnf install cryptsetup-devel'");
             System.exit(1);
-        }
-    }
-
-    /**
-     * Очищает все неиспользуемые loop-устройства.
-     */
-    private static void cleanupLoopDevices() throws IOException {
-        logger.info("Очистка неиспользуемых loop-устройств");
-        Process losetup = java.lang.Runtime.getRuntime().exec("losetup -D");
-        try {
-            if (!losetup.waitFor(30, TimeUnit.SECONDS) || losetup.exitValue() != 0) {
-                String error = readProcessOutput(losetup.getErrorStream());
-                logger.warning("Ошибка при очистке loop-устройств: " + error);
-            }
-        } catch (InterruptedException e) {
-            throw new IOException("Процесс очистки loop-устройств был прерван", e);
         }
     }
 
@@ -47,67 +31,28 @@ public class EncryptionManager {
             String password,
             String fsType
     ) throws IOException {
-        String containerPath = path;
+        String containerPath = path + File.separator + name + ".container";
         String loopDevice = null;
         Pointer cd = null;
 
         try {
-            // Проверяем права доступа к директории
-            File containerFile = new File(containerPath);
-            File parentDir = containerFile.getParentFile();
-            if (!parentDir.canWrite()) {
-                throw new IOException("Нет прав на запись в директорию: " + parentDir.getAbsolutePath());
-            }
-
-            // Проверяем свободное место
-            long requiredSpace = sizeMB * 1024L * 1024L;
-            long freeSpace = parentDir.getFreeSpace();
-            if (freeSpace < requiredSpace) {
-                throw new IOException("Недостаточно места на диске. Требуется: " + 
-                    (requiredSpace / 1024 / 1024) + "MB, Доступно: " + 
-                    (freeSpace / 1024 / 1024) + "MB");
-            }
-
             // 1. Создание файла-контейнера
             logger.info("Создание файла-контейнера размером " + sizeMB + "MB");
-            logger.info("Путь к контейнеру: " + containerPath);
-            logger.info("Алгоритм шифрования: " + algorithm);
-            
             Process truncate = java.lang.Runtime.getRuntime().exec(
                 String.format("truncate -s %dM %s", sizeMB, containerPath)
             );
-            if (!truncate.waitFor(30, TimeUnit.SECONDS) || truncate.exitValue() != 0) {
-                String error = readProcessOutput(truncate.getErrorStream());
-                throw new IOException("Ошибка при создании файла-контейнера: " + error);
+            if (truncate.waitFor(30, TimeUnit.SECONDS) && truncate.exitValue() != 0) {
+                throw new IOException("Ошибка при создании файла-контейнера");
             }
 
             // 2. Создание loop-устройства
             logger.info("Создание loop-устройства");
-            cleanupLoopDevices(); // Очищаем неиспользуемые loop-устройства
-            
-            // Пробуем создать loop-устройство несколько раз
-            int maxAttempts = 3;
-            for (int attempt = 1; attempt <= maxAttempts; attempt++) {
-                try {
-                    Process losetup = java.lang.Runtime.getRuntime().exec(
-                        String.format("losetup -f", containerPath)
-                    );
-                    loopDevice = readProcessOutput(losetup.getInputStream()).trim();
-                    if (!loopDevice.isEmpty()) {
-                        break;
-                    }
-                    String error = readProcessOutput(losetup.getErrorStream());
-                    logger.warning("Попытка " + attempt + " создания loop-устройства не удалась: " + error);
-                    if (attempt < maxAttempts) {
-                        Thread.sleep(1000); // Ждем секунду перед следующей попыткой
-                    }
-                } catch (InterruptedException e) {
-                    throw new IOException("Процесс создания loop-устройства был прерван", e);
-                }
-            }
-            
-            if (loopDevice == null || loopDevice.isEmpty()) {
-                throw new IOException("Не удалось создать loop-устройство после " + maxAttempts + " попыток");
+            Process losetup = java.lang.Runtime.getRuntime().exec(
+                String.format("losetup -f --show %s", containerPath)
+            );
+            loopDevice = readProcessOutput(losetup).trim();
+            if (loopDevice.isEmpty()) {
+                throw new IOException("Не удалось создать loop-устройство");
             }
 
             // 3. Инициализация шифрования
@@ -151,21 +96,18 @@ public class EncryptionManager {
         } catch (InterruptedException e) {
             throw new IOException("Процесс был прерван", e);
         } finally {
+            // Освобождение ресурсов
             if (cd != null) {
                 crypt.crypt_free(cd);
             }
         }
     }
 
-    private static String readProcessOutput(InputStream stream) throws IOException {
-        StringBuilder output = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                output.append(line).append("\n");
-            }
+    private static String readProcessOutput(Process process) throws IOException {
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(process.getInputStream()))) {
+            return reader.readLine();
         }
-        return output.toString();
     }
 
     /**
@@ -181,10 +123,9 @@ public class EncryptionManager {
             Process losetup = java.lang.Runtime.getRuntime().exec(
                 String.format("losetup -f --show %s", containerPath)
             );
-            loopDevice = readProcessOutput(losetup.getInputStream()).trim();
+            loopDevice = readProcessOutput(losetup).trim();
             if (loopDevice.isEmpty()) {
-                String error = readProcessOutput(losetup.getErrorStream());
-                throw new IOException("Не удалось создать loop-устройство: " + error);
+                throw new IOException("Не удалось создать loop-устройство");
             }
 
             // 2. Инициализация cryptsetup
@@ -216,9 +157,8 @@ public class EncryptionManager {
             Process mount = java.lang.Runtime.getRuntime().exec(
                 String.format("mount %s %s", devicePath, mountPoint)
             );
-            if (!mount.waitFor(30, TimeUnit.SECONDS) || mount.exitValue() != 0) {
-                String error = readProcessOutput(mount.getErrorStream());
-                throw new IOException("Ошибка при монтировании файловой системы: " + error);
+            if (mount.waitFor(30, TimeUnit.SECONDS) && mount.exitValue() != 0) {
+                throw new IOException("Ошибка при монтировании файловой системы");
             }
 
             logger.info("Контейнер успешно смонтирован в " + mountPoint);
@@ -244,9 +184,8 @@ public class EncryptionManager {
             Process umount = java.lang.Runtime.getRuntime().exec(
                 String.format("umount %s", mountPoint)
             );
-            if (!umount.waitFor(30, TimeUnit.SECONDS) || umount.exitValue() != 0) {
-                String error = readProcessOutput(umount.getErrorStream());
-                throw new IOException("Ошибка при размонтировании файловой системы: " + error);
+            if (umount.waitFor(30, TimeUnit.SECONDS) && umount.exitValue() != 0) {
+                throw new IOException("Ошибка при размонтировании файловой системы");
             }
 
             // 2. Закрытие зашифрованного контейнера
@@ -267,9 +206,8 @@ public class EncryptionManager {
             Process losetup = java.lang.Runtime.getRuntime().exec(
                 "losetup -d $(losetup -j " + name + ".container | cut -d':' -f1)"
             );
-            if (!losetup.waitFor(30, TimeUnit.SECONDS) || losetup.exitValue() != 0) {
-                String error = readProcessOutput(losetup.getErrorStream());
-                throw new IOException("Ошибка при отключении loop-устройства: " + error);
+            if (losetup.waitFor(30, TimeUnit.SECONDS) && losetup.exitValue() != 0) {
+                throw new IOException("Ошибка при отключении loop-устройства");
             }
 
             logger.info("Контейнер успешно размонтирован");
@@ -305,8 +243,7 @@ public class EncryptionManager {
         try {
             int exitCode = process.waitFor();
             if (exitCode != 0) {
-                String error = readProcessOutput(process.getErrorStream());
-                throw new IOException("Ошибка при создании файловой системы: " + error);
+                throw new IOException("Ошибка при создании файловой системы: " + exitCode);
             }
         } catch (InterruptedException e) {
             throw new IOException("Процесс прерван: " + e.getMessage());

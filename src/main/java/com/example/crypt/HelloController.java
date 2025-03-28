@@ -8,7 +8,6 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
 
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -38,14 +37,14 @@ public class HelloController {
 
         // Синхронизация ползунка и текстового поля
         sizeSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
-            sizeField.setText(String.format("%.0f", newVal)); // Обновляем текстовое поле
+            sizeField.setText(String.format("%.0f", newVal));
         });
 
         sizeField.textProperty().addListener((obs, oldVal, newVal) -> {
             try {
-                double value = Double.parseDouble(newVal); // Парсим значение из текстового поля
+                double value = Double.parseDouble(newVal);
                 if (value >= sizeSlider.getMin() && value <= sizeSlider.getMax()) {
-                    sizeSlider.setValue(value); // Обновляем ползунок
+                    sizeSlider.setValue(value);
                 }
             } catch (NumberFormatException e) {
                 // Игнорируем некорректный ввод
@@ -93,10 +92,26 @@ public class HelloController {
         int size = (int) sizeSlider.getValue();
         String name = nameField.getText();
 
-        // Формируем путь к контейнеру
-        //String containerPath = disk + File.separator + name + ".container";
-        String containerPath = disk;
+        // Создаем директорию для контейнеров, если она не существует
+        String containersDir = System.getProperty("user.home") + File.separator + ".crypt" + File.separator + "containers";
+        File dir = new File(containersDir);
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
 
+        // Формируем путь к контейнеру
+        String containerPath = containersDir + File.separator + name + ".container";
+
+        // Проверяем, не существует ли уже контейнер с таким именем
+        File containerFile = new File(containerPath);
+        if (containerFile.exists()) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Предупреждение");
+            alert.setHeaderText(null);
+            alert.setContentText("Контейнер с таким именем уже существует. Выберите другое имя.");
+            alert.showAndWait();
+            return;
+        }
 
         // Переходим к следующему окну
         try {
@@ -109,14 +124,17 @@ public class HelloController {
             Stage stage = (Stage) nextBtn.getScene().getWindow();
             stage.setScene(new Scene(root));
         } catch (IOException e) {
-            e.printStackTrace();
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Ошибка");
+            alert.setHeaderText(null);
+            alert.setContentText("Не удалось открыть окно настроек шифрования: " + e.getMessage());
+            alert.showAndWait();
         }
     }
 
     public void setStage(Stage stage) {
         this.stage = stage;
     }
-
 
     @FXML
     private TextArea helpTextArea;

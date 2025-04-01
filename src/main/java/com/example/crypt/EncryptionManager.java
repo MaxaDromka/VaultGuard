@@ -2,6 +2,8 @@ package com.example.crypt;
 
 import jnr.ffi.Pointer;
 import jnr.ffi.Runtime;
+import jnr.ffi.byref.PointerByReference;
+
 import java.io.*;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -49,7 +51,8 @@ public class EncryptionManager {
     ) throws IOException {
         String containerPath = path;
         String loopDevice = null;
-        Pointer cd = null;
+        PointerByReference cdRef = null; // Объявляем здесь
+        Pointer cd = null;              // Объявляем здесь
 
         try {
             // Проверяем права доступа к директории
@@ -112,22 +115,25 @@ public class EncryptionManager {
 
             // 3. Инициализация шифрования
             logger.info("Инициализация шифрования");
-            cd = runtime.getMemoryManager().allocateTemporary(java.lang.Runtime.getRuntime().availableProcessors() * 8, true);
-            if (cd == null) {
-                throw new IOException("Ошибка выделения памяти");
-            }
 
-            int result = crypt.crypt_init(cd, loopDevice);
-            if (result < 0) {
+            // [Старая некорректная инициализация]
+            // cd = runtime.getMemoryManager().allocateTemporary(...);
+
+            // Новая корректная инициализация через PointerByReference
+            cdRef = new PointerByReference();
+            int result = crypt.crypt_init(cdRef, loopDevice);
+            if (result != 0) {
                 throw new IOException("Ошибка при инициализации: " + result);
             }
+            cd = cdRef.getValue(); // Получаем указатель
 
             // 4. Форматирование LUKS
             logger.info("Форматирование LUKS");
-            result = crypt.crypt_format(cd, 2, algorithm, "xts-plain64", null, 512/8);
-            if (result < 0) {
-                throw new IOException("Ошибка при форматировании: " + result);
-            }
+            // Исправленный вызов crypt_format
+            String fullCipher = algorithm + "-xts-plain64";
+            result = crypt.crypt_format(
+                    cd, "luks2", fullCipher, null, null, null, 0, null
+            );
 
             // 5. Добавление ключа
             logger.info("Добавление ключа шифрования");
@@ -173,13 +179,14 @@ public class EncryptionManager {
      */
     public static void mountContainer(String containerPath, String name, String password, String mountPoint) throws IOException {
         String loopDevice = null;
-        Pointer cd = null;
+        PointerByReference cdRef = new PointerByReference();
+        Pointer cd = cdRef.getValue();
 
         try {
             // 1. Создание loop-устройства
             logger.info("Создание loop-устройства для " + containerPath);
             Process losetup = java.lang.Runtime.getRuntime().exec(
-                String.format("losetup -f --show %s", containerPath)
+                    String.format("losetup -f --show %s", containerPath)
             );
             loopDevice = readProcessOutput(losetup.getInputStream()).trim();
             if (loopDevice.isEmpty()) {
@@ -190,7 +197,7 @@ public class EncryptionManager {
             // 2. Инициализация cryptsetup
             logger.info("Инициализация cryptsetup");
             cd = runtime.getMemoryManager().allocateTemporary(java.lang.Runtime.getRuntime().availableProcessors() * 8, true);
-            int result = crypt.crypt_init(cd, loopDevice);
+            int result = crypt.crypt_init(cdRef, loopDevice);
             if (result < 0) {
                 throw new IOException("Ошибка при инициализации: " + result);
             }
@@ -236,7 +243,8 @@ public class EncryptionManager {
      */
     public static void unmountContainer(String name, String mountPoint) throws IOException {
         String mappedName = "crypt_" + name;
-        Pointer cd = null;
+        PointerByReference cdRef = new PointerByReference();
+        Pointer cd = cdRef.getValue();
 
         try {
             // 1. Размонтирование файловой системы
@@ -252,7 +260,7 @@ public class EncryptionManager {
             // 2. Закрытие зашифрованного контейнера
             logger.info("Закрытие зашифрованного контейнера");
             cd = runtime.getMemoryManager().allocateTemporary(java.lang.Runtime.getRuntime().availableProcessors() * 8, true);
-            int result = crypt.crypt_init_by_name(cd, mappedName);
+            int result = crypt.crypt_init_by_name(cdRef, mappedName);
             if (result < 0) {
                 throw new IOException("Ошибка при инициализации: " + result);
             }

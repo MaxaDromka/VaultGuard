@@ -1,6 +1,7 @@
 module com.example.crypt {
     requires javafx.controls;
     requires javafx.fxml;
+    requires javafx.graphics;
     requires java.desktop;
     requires java.prefs;
     requires org.jnrproject.ffi;

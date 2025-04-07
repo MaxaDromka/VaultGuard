@@ -10,7 +10,7 @@ import java.util.logging.Logger;
 
 public class EncryptionManager {
     private static final CryptSetup crypt = CryptSetup.load();
-    private static final Runtime runtime = Runtime.getRuntime(crypt.getClass().getClassLoader());
+    private static  Runtime runtime = Runtime.getRuntime(crypt.getClass().getClassLoader());
     private static final Logger logger = Logger.getLogger(EncryptionManager.class.getName());
 
     static {

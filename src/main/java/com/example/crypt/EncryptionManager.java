@@ -9,16 +9,21 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 public class EncryptionManager {
-    private static final CryptSetup crypt = CryptSetup.load();
-    private static final Runtime runtime = Runtime.getRuntime(crypt.getClass().getClassLoader());
+    private static final CryptSetup crypt;
+    private static final Runtime runtime;
     private static final Logger logger = Logger.getLogger(EncryptionManager.class.getName());
 
     static {
         try {
             System.loadLibrary("cryptsetup");
+            crypt = CryptSetup.load();
+            runtime = Runtime.getSystemRuntime();
         } catch (UnsatisfiedLinkError e) {
-            System.err.println("Ошибка: cryptsetup-devel не найдена. Установите её с помощью 'sudo dnf install cryptsetup-devel'");
-            System.exit(1);
+            logger.severe("Ошибка загрузки библиотеки cryptsetup: " + e.getMessage());
+            throw new RuntimeException("Ошибка загрузки библиотеки cryptsetup. Установите её с помощью 'sudo dnf install cryptsetup-devel'", e);
+        } catch (Exception e) {
+            logger.severe("Ошибка инициализации EncryptionManager: " + e.getMessage());
+            throw new RuntimeException("Ошибка инициализации EncryptionManager", e);
         }
     }
 

@@ -12,12 +12,13 @@ public class EncryptionManager {
     private static final CryptSetup crypt = CryptSetup.load();
     //private static final Runtime runtime = Runtime.getRuntime(crypt.getClass().getClassLoader());
   //  private static final Runtime runtime = Runtime.getRuntime(ClassLoader.getSystemClassLoader());
-    private static final Runtime runtime = Runtime.getRuntime(crypt);
+   private static final Runtime runtime = Runtime.getRuntime(crypt);
+    //private static final Runtime runtime = Runtime.getRuntime(crypt.getClass().getClassLoader());
     private static final Logger logger = Logger.getLogger(EncryptionManager.class.getName());
 
     static {
         try {
-            System.loadLibrary("jffi-1.3");
+           // System.loadLibrary("jffi-1.3");
             System.loadLibrary("cryptsetup");
         } catch (UnsatisfiedLinkError e) {
             System.err.println("Ошибка: cryptsetup-devel не найдена. Установите её с помощью 'sudo dnf install cryptsetup-devel'");
@@ -36,7 +37,14 @@ public class EncryptionManager {
             String password,
             String fsType
     ) throws IOException {
-        String containerPath = path + File.separator + name + ".container";
+        // Создаем путь к файлу-контейнеру
+        String homeDir = System.getProperty("user.home"); // Получаем путь к домашней директории
+        String containersDir = homeDir + File.separator + "containers"; // Путь к директории контейнеров
+        File containerDir = new File(containersDir);
+        if (!containerDir.exists()) {
+            containerDir.mkdirs(); // Создаем директорию, если её нет
+        }
+        String containerPath = containersDir + File.separator + name + ".container"; // Полный путь к файлу
         String loopDevice = null;
         PointerByReference cdRef = null; // Объявляем здесь
         Pointer cd = null;              // Объявляем здесь
@@ -45,9 +53,17 @@ public class EncryptionManager {
             // 1. Создание файла-контейнера
             logger.info("Создание файла-контейнера размером " + sizeMB + "MB");
             Process truncate = java.lang.Runtime.getRuntime().exec(
-                String.format("truncate -s %dM %s", sizeMB, containerPath)
+                    String.format("truncate -s %dM %s", sizeMB, containerPath)
             );
             if (truncate.waitFor(30, TimeUnit.SECONDS) && truncate.exitValue() != 0) {
+                // Логирование ошибок
+                try (BufferedReader errorReader = new BufferedReader(
+                        new InputStreamReader(truncate.getErrorStream()))) {
+                    String errorLine;
+                    while ((errorLine = errorReader.readLine()) != null) {
+                        logger.severe("Ошибка truncate: " + errorLine);
+                    }
+                }
                 throw new IOException("Ошибка при создании файла-контейнера");
             }
 

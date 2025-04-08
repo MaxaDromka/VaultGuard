@@ -10,11 +10,14 @@ import java.util.logging.Logger;
 
 public class EncryptionManager {
     private static final CryptSetup crypt = CryptSetup.load();
-    private static  Runtime runtime = Runtime.getRuntime(crypt.getClass().getClassLoader());
+    //private static final Runtime runtime = Runtime.getRuntime(crypt.getClass().getClassLoader());
+  //  private static final Runtime runtime = Runtime.getRuntime(ClassLoader.getSystemClassLoader());
+    private static final Runtime runtime = Runtime.getRuntime(crypt);
     private static final Logger logger = Logger.getLogger(EncryptionManager.class.getName());
 
     static {
         try {
+            System.loadLibrary("jffi-1.3");
             System.loadLibrary("cryptsetup");
         } catch (UnsatisfiedLinkError e) {
             System.err.println("Ошибка: cryptsetup-devel не найдена. Установите её с помощью 'sudo dnf install cryptsetup-devel'");

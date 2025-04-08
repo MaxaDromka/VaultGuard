@@ -34,16 +34,15 @@ public class EncryptionManager {
             String fsType
     ) throws IOException {
         // Создаем путь к файлу-контейнеру
-        String homeDir = System.getProperty("user.home"); // Получаем путь к домашней директории
-        String containersDir = homeDir + File.separator + "containers"; // Путь к директории контейнеров
+        String homeDir = System.getProperty("user.home");
+        String containersDir = homeDir + File.separator + "containers";
         File containerDir = new File(containersDir);
         if (!containerDir.exists()) {
-            containerDir.mkdirs(); // Создаем директорию, если её нет
+            containerDir.mkdirs();
         }
-        String containerPath = containersDir + File.separator + name + ".container"; // Полный путь к файлу
-        String loopDevice = null;
-        PointerByReference cdRef = null; // Объявляем здесь
-        Pointer cd = null;              // Объявляем здесь
+        String containerPath = containersDir + File.separator + name + ".container";
+        PointerByReference cdRef = new PointerByReference();
+        Pointer cd = null;
 
         try {
             // 1. Создание файла-контейнера
@@ -52,7 +51,6 @@ public class EncryptionManager {
                 String.format("truncate -s %dM %s", sizeMB, containerPath)
             );
             if (truncate.waitFor(30, TimeUnit.SECONDS) && truncate.exitValue() != 0) {
-                // Логирование ошибок
                 try (BufferedReader errorReader = new BufferedReader(
                         new InputStreamReader(truncate.getErrorStream()))) {
                     String errorLine;
@@ -60,55 +58,42 @@ public class EncryptionManager {
                         logger.severe("Ошибка truncate: " + errorLine);
                     }
                 }
+                throw new IOException("Ошибка при создании файла контейнера");
             }
 
-            // 2. Создание loop-устройства
-            logger.info("Создание loop-устройства");
-            Process losetup = java.lang.Runtime.getRuntime().exec(
-                String.format("losetup -f --show %s", containerPath)
-            );
-            loopDevice = readProcessOutput(losetup).trim();
-            if (loopDevice.isEmpty()) {
-                throw new IOException("Не удалось создать loop-устройство");
-            }
-
-            // 3. Инициализация шифрования
-            logger.info("Инициализация шифрования");
-
-            // [Старая некорректная инициализация]
-            // cd = runtime.getMemoryManager().allocateTemporary(...);
-
-            // Новая корректная инициализация через PointerByReference
-            cdRef = new PointerByReference();
-            int result = crypt.crypt_init(cdRef, loopDevice);
+            // 2. Инициализация cryptsetup
+            logger.info("Инициализация cryptsetup");
+            int result = crypt.crypt_init(cdRef, containerPath);
             if (result != 0) {
-                throw new IOException("Ошибка при инициализации: " + result);
+                throw new IOException("Ошибка при инициализации cryptsetup: " + result);
             }
-            cd = cdRef.getValue(); // Получаем указатель
+            cd = cdRef.getValue();
 
-            // 4. Форматирование LUKS
+            // 3. Форматирование LUKS
             logger.info("Форматирование LUKS");
-            // Исправленный вызов crypt_format
             String fullCipher = algorithm + "-xts-plain64";
             result = crypt.crypt_format(
-                    cd, "luks2", fullCipher, null, null, null, 0, null
+                    cd, "LUKS2", fullCipher, null, null, null, 0, null
             );
+            if (result != 0) {
+                throw new IOException("Ошибка при форматировании LUKS: " + result);
+            }
 
-            // 5. Добавление ключа
+            // 4. Добавление ключа
             logger.info("Добавление ключа шифрования");
             result = crypt.crypt_keyslot_add_by_volume_key(cd, -1, null, 0, password, password.length());
             if (result < 0) {
                 throw new IOException("Ошибка при добавлении ключа: " + result);
             }
 
-            // 6. Открытие устройства
+            // 5. Открытие устройства
             logger.info("Открытие зашифрованного устройства");
             result = crypt.crypt_activate_by_passphrase(cd, name, -1, password, password.length(), 0);
             if (result < 0) {
                 throw new IOException("Ошибка при активации: " + result);
             }
 
-            // 7. Создание файловой системы
+            // 6. Создание файловой системы
             logger.info("Создание файловой системы");
             createFileSystem(name, fsType);
 
@@ -116,7 +101,6 @@ public class EncryptionManager {
         } catch (InterruptedException e) {
             throw new IOException("Процесс был прерван", e);
         } finally {
-            // Освобождение ресурсов
             if (cd != null) {
                 crypt.crypt_free(cd);
             }

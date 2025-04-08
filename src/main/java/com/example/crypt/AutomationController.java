@@ -59,7 +59,7 @@ public class AutomationController {
 
     private void loadContainers() {
         try {
-            File containersDir = new File(System.getProperty("user.home") + "/.crypt/containers");
+            File containersDir = new File(System.getProperty("user.home") + "/containers");
             if (containersDir.exists() && containersDir.isDirectory()) {
                 File[] containers = containersDir.listFiles((dir, name) -> name.endsWith(".container"));
                 if (containers != null) {

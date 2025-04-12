@@ -69,7 +69,7 @@ public class HelloApplication extends Application {
         java.awt.PopupMenu popup = new java.awt.PopupMenu();
 
         // Пункт меню "Создание"
-        java.awt.MenuItem createItem = new java.awt.MenuItem("Создание");
+        java.awt.MenuItem createItem = new java.awt.MenuItem("Создание раздела");
         createItem.addActionListener(e -> Platform.runLater(this::showCreationWindow));
 
         // Пункт меню "Редактировать разделы"
@@ -80,7 +80,7 @@ public class HelloApplication extends Application {
         automationItem.addActionListener(e -> Platform.runLater(this::showAutomationWindow));
 
         // Добавляем пункт меню для GPG операций
-        java.awt.MenuItem gpgItem = new java.awt.MenuItem("GPG Шифрование");
+        java.awt.MenuItem gpgItem = new java.awt.MenuItem("Шифрование отдельных файлов");
         gpgItem.addActionListener(e -> Platform.runLater(this::showGPGWindow));
 
         // Пункт меню "Редактировать разделы
@@ -88,9 +88,8 @@ public class HelloApplication extends Application {
         java.awt.MenuItem backupItem = new java.awt.MenuItem("Бэкап");
         backupItem.addActionListener(e -> Platform.runLater(this::showManagementWindow));
 
-        // Пункт меню "Справка"dActionListener(e -> Platform.runLater(this::showHelpWindow));
-        new MenuItem("Справка");
-        //helpItem
+        java.awt.MenuItem helpItem = new java.awt.MenuItem("Справка");
+        helpItem.addActionListener(e -> Platform.runLater(this::showHelpWindow));
 
 
         // Пункт меню "Выход"
@@ -105,9 +104,9 @@ public class HelloApplication extends Application {
         popup.add(editItem); // Добавляем кнопку редактирования
         popup.add(automationItem);
         popup.add(backupItem);
-        //popup.add(helpItem);
         popup.add(gpgItem);
         popup.addSeparator();
+        popup.add(helpItem);
         popup.add(exitItem);
 
         trayIcon.setPopupMenu(popup);

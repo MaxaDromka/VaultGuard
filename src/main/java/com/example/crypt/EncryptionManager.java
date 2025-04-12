@@ -22,6 +22,45 @@ public class EncryptionManager {
         }
     }
 
+    private static String convertAlgorithmFormat(String algorithm) {
+        switch (algorithm) {
+            case "AES-256 (XTS)":
+                return "aes-cbc-essiv:sha256";
+            case "Serpent (XTS)":
+                return "serpent-cbc-essiv:sha256";
+            case "Twofish (XTS)":
+                return "twofish-cbc-essiv:sha256";
+            case "AES-Twofish (XTS)":
+                return "aes-twofish-cbc-essiv:sha256";
+            case "AES-Twofish-Serpent (XTS)":
+                return "aes-twofish-serpent-cbc-essiv:sha256";
+            default:
+                throw new IllegalArgumentException("Неподдерживаемый алгоритм шифрования: " + algorithm);
+        }
+    }
+
+    private static void checkCipherSupport(String cipher) throws IOException {
+        try {
+            Process process = java.lang.Runtime.getRuntime().exec("cryptsetup benchmark");
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line;
+            boolean supported = false;
+
+            while ((line = reader.readLine()) != null) {
+                if (line.contains(cipher.split("-")[0])) { // Проверяем только базовый шифр
+                    supported = true;
+                    break;
+                }
+            }
+
+            if (!supported) {
+                throw new IOException("Шифр " + cipher + " не поддерживается в системе");
+            }
+        } catch (IOException e) {
+            throw new IOException("Не удалось проверить поддержку шифров: " + e.getMessage());
+        }
+    }
+
     /**
      * Создает зашифрованный контейнер.
      */
@@ -71,12 +110,22 @@ public class EncryptionManager {
 
             // 3. Форматирование LUKS
             logger.info("Форматирование LUKS");
-            String fullCipher = algorithm + "-xts-plain64";
+            String cipher = convertAlgorithmFormat(algorithm);
+            checkCipherSupport(cipher);
+
             result = crypt.crypt_format(
-                    cd, "LUKS2", fullCipher, null, null, null, 0, null
+                    cd,
+                    "LUKS2",
+                    cipher,          // полный шифр с режимом
+                    null,           // cipher_mode не нужен, так как включен в cipher
+                    "sha256",       // hash
+                    null,           // uuid
+                    0,              // volume_key_size
+                    null            // params
             );
             if (result != 0) {
-                throw new IOException("Ошибка при форматировании LUKS: " + result);
+                throw new IOException("Ошибка при форматировании LUKS: " + result + 
+                    ". Проверьте поддержку шифра " + cipher + " в ядре.");
             }
 
             // 4. Добавление ключа

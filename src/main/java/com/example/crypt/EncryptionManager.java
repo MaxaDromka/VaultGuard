@@ -110,13 +110,13 @@ public class EncryptionManager {
 
             // 3. Форматирование LUKS
             logger.info("Форматирование LUKS");
-            String cipher = convertAlgorithmFormat(algorithm);
-            checkCipherSupport(cipher);
+            String fullCipher = algorithm + "-xts-plain64";
+            //checkCipherSupport(cipher);
 
             result = crypt.crypt_format(
                     cd,
                     "LUKS2",
-                    cipher,          // полный шифр с режимом
+                    fullCipher,          // полный шифр с режимом
                     null,           // cipher_mode не нужен, так как включен в cipher
                     "sha256",       // hash
                     null,           // uuid
@@ -124,8 +124,7 @@ public class EncryptionManager {
                     null            // params
             );
             if (result != 0) {
-                throw new IOException("Ошибка при форматировании LUKS: " + result + 
-                    ". Проверьте поддержку шифра " + cipher + " в ядре.");
+                throw new IOException("Ошибка при форматировании LUKS: " + result);
             }
 
             // 4. Добавление ключа

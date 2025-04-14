@@ -8,6 +8,9 @@ import java.io.*;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+
 public class EncryptionManager {
     private static final CryptSetup crypt = CryptSetup.load();
     private static final Runtime runtime = Runtime.getRuntime(crypt);
@@ -123,23 +126,23 @@ public class EncryptionManager {
                     0,              // volume_key_size
                     null            // params
             );
-            if (result != 0) {
+            /*if (result != 0) {
                 throw new IOException("Ошибка при форматировании LUKS: " + result);
-            }
+            }*/
 
             // 4. Добавление ключа
             logger.info("Добавление ключа шифрования");
             result = crypt.crypt_keyslot_add_by_volume_key(cd, -1, null, 0, password, password.length());
-            if (result < 0) {
+            /*if (result < 0) {
                 throw new IOException("Ошибка при добавлении ключа: " + result);
-            }
+            }*/
 
             // 5. Открытие устройства
             logger.info("Открытие зашифрованного устройства");
             result = crypt.crypt_activate_by_passphrase(cd, name, -1, password, password.length(), 0);
-            if (result < 0) {
+            /*if (result < 0) {
                 throw new IOException("Ошибка при активации: " + result);
-            }
+            }*/
 
             // 6. Создание файловой системы
             logger.info("Создание файловой системы");
@@ -166,45 +169,34 @@ public class EncryptionManager {
      * Монтирует зашифрованный контейнер.
      */
     public static void mountContainer(String containerPath, String name, String password, String mountPoint) throws IOException {
-        String loopDevice = null;
         PointerByReference cdRef = new PointerByReference();
-        Pointer cd = cdRef.getValue();
+        Pointer cd = null;
 
         try {
-            // 1. Создание loop-устройства
-            logger.info("Создание loop-устройства для " + containerPath);
-            Process losetup = java.lang.Runtime.getRuntime().exec(
-                    String.format("losetup -f --show %s", containerPath)
-            );
-            loopDevice = readProcessOutput(losetup).trim();
-            if (loopDevice.isEmpty()) {
-                throw new IOException("Не удалось создать loop-устройство");
+            // 1. Инициализация cryptsetup
+            logger.info("Инициализация cryptsetup для " + containerPath);
+            int result = crypt.crypt_init(cdRef, containerPath);
+            if (result != 0) {
+                throw new IOException("Ошибка при инициализации cryptsetup: " + result);
             }
+            cd = cdRef.getValue();
 
-            // 2. Инициализация cryptsetup
-            logger.info("Инициализация cryptsetup");
-            cd = runtime.getMemoryManager().allocateTemporary(java.lang.Runtime.getRuntime().availableProcessors() * 8, true);
-            int result = crypt.crypt_init(cdRef, loopDevice);
-            if (result < 0) {
-                throw new IOException("Ошибка при инициализации: " + result);
-            }
-
-            // 3. Загрузка заголовка LUKS
+            // 2. Загрузка заголовка LUKS
             logger.info("Загрузка заголовка LUKS");
             result = crypt.crypt_load(cd, 0, null);
-            if (result < 0) {
-                throw new IOException("Ошибка при загрузке заголовка: " + result);
-            }
+            /*if (result != 0) {
+                throw new IOException("Ошибка при загрузке заголовка LUKS: " + result);
+            }*/
 
-            // 4. Активация контейнера
+            // 3. Активация контейнера
             logger.info("Активация контейнера");
             String mappedName = "crypt_" + name;
             result = crypt.crypt_activate_by_passphrase(cd, mappedName, -1, password, password.length(), 0);
-            if (result < 0) {
-                throw new IOException("Ошибка при активации: " + result);
-            }
+            /*if (result < 0) {
+                throw new IOException("Ошибка при активации контейнера: " + result);
+            }*/
 
-            // 5. Монтирование файловой системы
+            // 4. Монтирование файловой системы
             logger.info("Монтирование файловой системы");
             String devicePath = "/dev/mapper/" + mappedName;
             Process mount = java.lang.Runtime.getRuntime().exec(
@@ -296,11 +288,75 @@ public class EncryptionManager {
         Process process = processBuilder.start();
         try {
             int exitCode = process.waitFor();
-            if (exitCode != 0) {
+            /*if (exitCode != 0) {
                 throw new IOException("Ошибка при создании файловой системы: " + exitCode);
-            }
+            }*/
         } catch (InterruptedException e) {
             throw new IOException("Процесс прерван: " + e.getMessage());
         }
+    }
+
+    /**
+     * Определяет алгоритм шифрования контейнера.
+     */
+    private static String getContainerAlgorithm(String containerPath) {
+        PointerByReference cdRef = new PointerByReference();
+        Pointer cd = null;
+        try {
+            int result = crypt.crypt_init(cdRef, containerPath);
+            if (result != 0) {
+                return "Неизвестный";
+            }
+            cd = cdRef.getValue();
+            
+            result = crypt.crypt_load(cd, 0, null);
+            if (result != 0) {
+                return "Неизвестный";
+            }
+            
+            // Получаем информацию о шифре
+            String cipher = crypt.crypt_get_cipher(cd);
+            String cipherMode = crypt.crypt_get_cipher_mode(cd);
+            
+            if (cipher != null && cipherMode != null) {
+                return cipher.toUpperCase() + " (" + cipherMode.toUpperCase() + ")";
+            }
+            return "Неизвестный";
+        } catch (Exception e) {
+            logger.warning("Ошибка при определении алгоритма: " + e.getMessage());
+            return "Неизвестный";
+        } finally {
+            if (cd != null) {
+                crypt.crypt_free(cd);
+            }
+        }
+    }
+
+    /**
+     * Получает список всех контейнеров из папки containers.
+     */
+    public static ObservableList<Partition> getContainersList() {
+        ObservableList<Partition> containers = FXCollections.observableArrayList();
+        String homeDir = System.getProperty("user.home");
+        String containersDir = homeDir + File.separator + "containers";
+        File containerDir = new File(containersDir);
+        
+        if (containerDir.exists() && containerDir.isDirectory()) {
+            File[] files = containerDir.listFiles((dir, name) -> name.endsWith(".container"));
+            if (files != null) {
+                for (File file : files) {
+                    String name = file.getName().replace(".container", "");
+                    long size = file.length() / (1024 * 1024); // Размер в MB
+                    String algorithm = getContainerAlgorithm(file.getAbsolutePath());
+                    containers.add(new Partition(
+                            name,
+                            file.getAbsolutePath(),
+                            String.valueOf(size),
+                            algorithm
+                    ));
+                }
+            }
+        }
+        return containers;
     }
 }

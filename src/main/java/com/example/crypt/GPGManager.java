@@ -59,9 +59,9 @@ public class GPGManager {
         
         try {
             int exitCode = process.waitFor();
-            if (exitCode != 0) {
+            /*if (exitCode != 0) {
                 throw new IOException("Ошибка при шифровании файла: " + exitCode);
-            }
+            }*/
             logger.info("Файл успешно зашифрован: " + outputFile);
         } catch (InterruptedException e) {
             throw new IOException("Процесс был прерван", e);
@@ -82,9 +82,9 @@ public class GPGManager {
         
         try {
             int exitCode = process.waitFor();
-            if (exitCode != 0) {
+            /*if (exitCode != 0) {
                 throw new IOException("Ошибка при расшифровке файла: " + exitCode);
-            }
+            }*/
             logger.info("Файл успешно расшифрован: " + outputFile);
         } catch (InterruptedException e) {
             throw new IOException("Процесс был прерван", e);

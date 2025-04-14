@@ -25,6 +25,10 @@ public interface CryptSetup {
     int crypt_deactivate(Pointer cd, String name); // Деактивация контейнера
     void crypt_free(Pointer cd);
 
+    // Новые методы для получения информации о шифре
+    String crypt_get_cipher(Pointer cd);
+    String crypt_get_cipher_mode(Pointer cd);
+
     // Загружаем библиотеку
     static CryptSetup load() {
         return LibraryLoader.create(CryptSetup.class).load("cryptsetup");

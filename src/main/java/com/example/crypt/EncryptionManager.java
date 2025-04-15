@@ -1,5 +1,7 @@
 package com.example.crypt;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import jnr.ffi.Pointer;
 import jnr.ffi.Runtime;
 import jnr.ffi.byref.PointerByReference;
@@ -7,9 +9,6 @@ import jnr.ffi.byref.PointerByReference;
 import java.io.*;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
-
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 
 public class EncryptionManager {
     private static final CryptSetup crypt = CryptSetup.load();
@@ -171,39 +170,57 @@ public class EncryptionManager {
     public static void mountContainer(String containerPath, String name, String password, String mountPoint) throws IOException {
         PointerByReference cdRef = new PointerByReference();
         Pointer cd = null;
+        String loopDevice = null;
 
         try {
-            // 1. Инициализация cryptsetup
-            logger.info("Инициализация cryptsetup для " + containerPath);
-            int result = crypt.crypt_init(cdRef, containerPath);
+            // 1. Создание loop-устройства
+            logger.info("Создание loop-устройства для " + containerPath);
+            Process losetup = java.lang.Runtime.getRuntime().exec(
+                String.format("sudo losetup -f --show %s", containerPath)
+            );
+            String output = readProcessOutput(losetup);
+            if (output == null || output.trim().isEmpty()) {
+                throw new IOException("Не удалось создать loop-устройство. Убедитесь, что:\n" +
+                    "1. Приложение запущено с правами root\n" +
+                    "2. Команда losetup доступна в системе\n" +
+                    "3. Файл контейнера существует и доступен для чтения");
+            }
+            loopDevice = output.trim();
+
+            // 2. Инициализация cryptsetup
+            logger.info("Инициализация cryptsetup");
+            int result = crypt.crypt_init(cdRef, loopDevice);
             if (result != 0) {
                 throw new IOException("Ошибка при инициализации cryptsetup: " + result);
             }
             cd = cdRef.getValue();
 
-            // 2. Загрузка заголовка LUKS
+            // 3. Загрузка заголовка LUKS
             logger.info("Загрузка заголовка LUKS");
             result = crypt.crypt_load(cd, 0, null);
-            /*if (result != 0) {
+            if (result != 0) {
                 throw new IOException("Ошибка при загрузке заголовка LUKS: " + result);
-            }*/
+            }
 
-            // 3. Активация контейнера
+            // 4. Активация контейнера
             logger.info("Активация контейнера");
             String mappedName = "crypt_" + name;
             result = crypt.crypt_activate_by_passphrase(cd, mappedName, -1, password, password.length(), 0);
-            /*if (result < 0) {
+            if (result < 0) {
                 throw new IOException("Ошибка при активации контейнера: " + result);
-            }*/
+            }
 
-            // 4. Монтирование файловой системы
+            // 5. Монтирование файловой системы
             logger.info("Монтирование файловой системы");
             String devicePath = "/dev/mapper/" + mappedName;
             Process mount = java.lang.Runtime.getRuntime().exec(
-                String.format("mount %s %s", devicePath, mountPoint)
+                String.format("sudo mount %s %s", devicePath, mountPoint)
             );
             if (mount.waitFor(30, TimeUnit.SECONDS) && mount.exitValue() != 0) {
-                throw new IOException("Ошибка при монтировании файловой системы");
+                throw new IOException("Ошибка при монтировании файловой системы. Убедитесь, что:\n" +
+                    "1. Точка монтирования существует и доступна для записи\n" +
+                    "2. Контейнер не смонтирован в другом месте\n" +
+                    "3. У вас есть права на монтирование файловых систем");
             }
 
             logger.info("Контейнер успешно смонтирован в " + mountPoint);
@@ -296,51 +313,12 @@ public class EncryptionManager {
         }
     }
 
-    /**
-     * Определяет алгоритм шифрования контейнера.
-     */
-    private static String getContainerAlgorithm(String containerPath) {
-        PointerByReference cdRef = new PointerByReference();
-        Pointer cd = null;
-        try {
-            int result = crypt.crypt_init(cdRef, containerPath);
-            if (result != 0) {
-                return "Неизвестный";
-            }
-            cd = cdRef.getValue();
-            
-            result = crypt.crypt_load(cd, 0, null);
-            if (result != 0) {
-                return "Неизвестный";
-            }
-            
-            // Получаем информацию о шифре
-            String cipher = crypt.crypt_get_cipher(cd);
-            String cipherMode = crypt.crypt_get_cipher_mode(cd);
-            
-            if (cipher != null && cipherMode != null) {
-                return cipher.toUpperCase() + " (" + cipherMode.toUpperCase() + ")";
-            }
-            return "Неизвестный";
-        } catch (Exception e) {
-            logger.warning("Ошибка при определении алгоритма: " + e.getMessage());
-            return "Неизвестный";
-        } finally {
-            if (cd != null) {
-                crypt.crypt_free(cd);
-            }
-        }
-    }
-
-    /**
-     * Получает список всех контейнеров из папки containers.
-     */
     public static ObservableList<Partition> getContainersList() {
         ObservableList<Partition> containers = FXCollections.observableArrayList();
         String homeDir = System.getProperty("user.home");
         String containersDir = homeDir + File.separator + "containers";
         File containerDir = new File(containersDir);
-        
+
         if (containerDir.exists() && containerDir.isDirectory()) {
             File[] files = containerDir.listFiles((dir, name) -> name.endsWith(".container"));
             if (files != null) {
@@ -358,5 +336,38 @@ public class EncryptionManager {
             }
         }
         return containers;
+    }
+
+    private static String getContainerAlgorithm(String containerPath) {
+        PointerByReference cdRef = new PointerByReference();
+        Pointer cd = null;
+        try {
+            int result = crypt.crypt_init(cdRef, containerPath);
+            if (result != 0) {
+                return "Неизвестный";
+            }
+            cd = cdRef.getValue();
+
+            result = crypt.crypt_load(cd, 0, null);
+            if (result != 0) {
+                return "Неизвестный";
+            }
+
+            // Получаем информацию о шифре
+            String cipher = crypt.crypt_get_cipher(cd);
+            String cipherMode = crypt.crypt_get_cipher_mode(cd);
+
+            if (cipher != null && cipherMode != null) {
+                return cipher.toUpperCase() + " (" + cipherMode.toUpperCase() + ")";
+            }
+            return "Неизвестный";
+        } catch (Exception e) {
+            logger.warning("Ошибка при определении алгоритма: " + e.getMessage());
+            return "Неизвестный";
+        } finally {
+            if (cd != null) {
+                crypt.crypt_free(cd);
+            }
+        }
     }
 }

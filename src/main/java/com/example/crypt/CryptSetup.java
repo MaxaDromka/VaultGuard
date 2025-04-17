@@ -20,6 +20,7 @@ public interface CryptSetup {
             Pointer params
     );
     int crypt_keyslot_add_by_volume_key(Pointer cd, int keyslot, Pointer volumeKey, @size_t long volumeKeySize, String password, @size_t long passwordSize);
+    int crypt_keyslot_add_by_passphrase(Pointer cd, int keyslot, String password, @size_t long passwordSize);
     int crypt_load(Pointer cd, int type, Pointer params); // Загрузка заголовка LUKS
     int crypt_activate_by_passphrase(Pointer cd, String name, int keyslot, String passphrase, @size_t long passphraseSize, int flags); // Активация контейнера
     int crypt_deactivate(Pointer cd, String name); // Деактивация контейнера

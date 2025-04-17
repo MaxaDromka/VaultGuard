@@ -168,38 +168,34 @@ public class EncryptionManager {
      * Монтирует зашифрованный контейнер.
      */
     public static void mountContainer(String containerPath, String name, String password, String mountPoint) throws IOException {
-        PointerByReference cdRef = new PointerByReference();
-        Pointer cd = null;
         String loopDevice = null;
+        PointerByReference cdRef = new PointerByReference();
+        Pointer cd = cdRef.getValue();
 
         try {
             // 1. Создание loop-устройства
             logger.info("Создание loop-устройства для " + containerPath);
             Process losetup = java.lang.Runtime.getRuntime().exec(
-                String.format("sudo losetup -f --show %s", containerPath)
+                    String.format("losetup -f --show %s", containerPath)
             );
-            String output = readProcessOutput(losetup);
-            if (output == null || output.trim().isEmpty()) {
-                throw new IOException("Не удалось создать loop-устройство. Убедитесь, что:\n" +
-                    "1. Приложение запущено с правами root\n" +
-                    "2. Команда losetup доступна в системе\n" +
-                    "3. Файл контейнера существует и доступен для чтения");
+            loopDevice = readProcessOutput(losetup).trim();
+            if (loopDevice.isEmpty()) {
+                throw new IOException("Не удалось создать loop-устройство");
             }
-            loopDevice = output.trim();
 
             // 2. Инициализация cryptsetup
             logger.info("Инициализация cryptsetup");
+            cd = runtime.getMemoryManager().allocateTemporary(java.lang.Runtime.getRuntime().availableProcessors() * 8, true);
             int result = crypt.crypt_init(cdRef, loopDevice);
-            if (result != 0) {
-                throw new IOException("Ошибка при инициализации cryptsetup: " + result);
+            if (result < 0) {
+                throw new IOException("Ошибка при инициализации: " + result);
             }
-            cd = cdRef.getValue();
 
             // 3. Загрузка заголовка LUKS
             logger.info("Загрузка заголовка LUKS");
             result = crypt.crypt_load(cd, 0, null);
-            if (result != 0) {
-                throw new IOException("Ошибка при загрузке заголовка LUKS: " + result);
+            if (result < 0) {
+                throw new IOException("Ошибка при загрузке заголовка: " + result);
             }
 
             // 4. Активация контейнера
@@ -207,20 +203,17 @@ public class EncryptionManager {
             String mappedName = "crypt_" + name;
             result = crypt.crypt_activate_by_passphrase(cd, mappedName, -1, password, password.length(), 0);
             if (result < 0) {
-                throw new IOException("Ошибка при активации контейнера: " + result);
+                throw new IOException("Ошибка при активации: " + result);
             }
 
             // 5. Монтирование файловой системы
             logger.info("Монтирование файловой системы");
             String devicePath = "/dev/mapper/" + mappedName;
             Process mount = java.lang.Runtime.getRuntime().exec(
-                String.format("sudo mount %s %s", devicePath, mountPoint)
+                String.format("mount %s %s", devicePath, mountPoint)
             );
             if (mount.waitFor(30, TimeUnit.SECONDS) && mount.exitValue() != 0) {
-                throw new IOException("Ошибка при монтировании файловой системы. Убедитесь, что:\n" +
-                    "1. Точка монтирования существует и доступна для записи\n" +
-                    "2. Контейнер не смонтирован в другом месте\n" +
-                    "3. У вас есть права на монтирование файловых систем");
+                throw new IOException("Ошибка при монтировании файловой системы");
             }
 
             logger.info("Контейнер успешно смонтирован в " + mountPoint);

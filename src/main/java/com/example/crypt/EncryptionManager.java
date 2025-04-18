@@ -75,13 +75,11 @@ public class EncryptionManager {
             String fsType
     ) throws IOException {
         // Создаем путь к файлу-контейнеру
-        String homeDir = System.getProperty("user.home");
-        String containersDir = homeDir + File.separator + "containers";
-        File containerDir = new File(containersDir);
+        String containerPath = "/root/containers/" + name + ".container";
+        File containerDir = new File("/root/containers");
         if (!containerDir.exists()) {
             containerDir.mkdirs();
         }
-        String containerPath = containersDir + File.separator + name + ".container";
         PointerByReference cdRef = new PointerByReference();
         Pointer cd = null;
 
@@ -105,43 +103,34 @@ public class EncryptionManager {
             // 2. Инициализация cryptsetup
             logger.info("Инициализация cryptsetup");
             int result = crypt.crypt_init(cdRef, containerPath);
-            if (result != 0) {
+            if (result < 0) {
                 throw new IOException("Ошибка при инициализации cryptsetup: " + result);
             }
             cd = cdRef.getValue();
 
             // 3. Форматирование LUKS
             logger.info("Форматирование LUKS");
-            String fullCipher = algorithm + "-xts-plain64";
-            //checkCipherSupport(cipher);
+            String fullCipher = convertAlgorithmFormat(algorithm);
+            checkCipherSupport(fullCipher);
 
             result = crypt.crypt_format(
                     cd,
-                    "LUKS2",
-                    fullCipher,          // полный шифр с режимом
-                    null,           // cipher_mode не нужен, так как включен в cipher
-                    "sha256",       // hash
-                    null,           // uuid
-                    0,              // volume_key_size
-                    null            // params
+                    "LUKS2",            // тип устройства
+                    "aes",              // шифр
+                    "xts-plain64",      // режим шифра
+                    "sha256",           // хеш
+                    null,               // uuid (автогенерация)
+                    512,                // volume_key_size (512 бит для XTS)
+                    null                // params
             );
-            /*if (result != 0) {
-                throw new IOException("Ошибка при форматировании LUKS: " + result);
-            }*/
 
             // 4. Добавление ключа
             logger.info("Добавление ключа шифрования");
             result = crypt.crypt_keyslot_add_by_volume_key(cd, -1, null, 0, password, password.length());
-            /*if (result < 0) {
-                throw new IOException("Ошибка при добавлении ключа: " + result);
-            }*/
 
             // 5. Открытие устройства
             logger.info("Открытие зашифрованного устройства");
             result = crypt.crypt_activate_by_passphrase(cd, name, -1, password, password.length(), 0);
-            /*if (result < 0) {
-                throw new IOException("Ошибка при активации: " + result);
-            }*/
 
             // 6. Создание файловой системы
             logger.info("Создание файловой системы");
@@ -160,7 +149,19 @@ public class EncryptionManager {
     private static String readProcessOutput(Process process) throws IOException {
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(process.getInputStream()))) {
-            return reader.readLine();
+            String output = reader.readLine();
+            if (output == null) {
+                // Если вывод пустой, проверим stderr
+                try (BufferedReader errorReader = new BufferedReader(
+                        new InputStreamReader(process.getErrorStream()))) {
+                    String error = errorReader.readLine();
+                    if (error != null) {
+                        throw new IOException("Ошибка выполнения команды: " + error);
+                    }
+                }
+                throw new IOException("Команда не вернула результат");
+            }
+            return output;
         }
     }
 
@@ -170,26 +171,27 @@ public class EncryptionManager {
     public static void mountContainer(String containerPath, String name, String password, String mountPoint) throws IOException {
         String loopDevice = null;
         PointerByReference cdRef = new PointerByReference();
-        Pointer cd = cdRef.getValue();
+        Pointer cd = null;
 
         try {
             // 1. Создание loop-устройства
             logger.info("Создание loop-устройства для " + containerPath);
             Process losetup = java.lang.Runtime.getRuntime().exec(
-                    String.format("losetup -f --show %s", containerPath)
+                    String.format("sudo losetup -f --show %s", containerPath)
             );
-            loopDevice = readProcessOutput(losetup).trim();
-            if (loopDevice.isEmpty()) {
+            loopDevice = readProcessOutput(losetup);
+            if (loopDevice == null || loopDevice.isEmpty()) {
                 throw new IOException("Не удалось создать loop-устройство");
             }
+            loopDevice = loopDevice.trim();
 
             // 2. Инициализация cryptsetup
             logger.info("Инициализация cryptsetup");
-            cd = runtime.getMemoryManager().allocateTemporary(java.lang.Runtime.getRuntime().availableProcessors() * 8, true);
             int result = crypt.crypt_init(cdRef, loopDevice);
             if (result < 0) {
                 throw new IOException("Ошибка при инициализации: " + result);
             }
+            cd = cdRef.getValue();
 
             // 3. Загрузка заголовка LUKS
             logger.info("Загрузка заголовка LUKS");
@@ -210,7 +212,7 @@ public class EncryptionManager {
             logger.info("Монтирование файловой системы");
             String devicePath = "/dev/mapper/" + mappedName;
             Process mount = java.lang.Runtime.getRuntime().exec(
-                String.format("mount %s %s", devicePath, mountPoint)
+                    String.format("sudo mount %s %s", devicePath, mountPoint)
             );
             if (mount.waitFor(30, TimeUnit.SECONDS) && mount.exitValue() != 0) {
                 throw new IOException("Ошибка при монтировании файловой системы");
@@ -308,8 +310,7 @@ public class EncryptionManager {
 
     public static ObservableList<Partition> getContainersList() {
         ObservableList<Partition> containers = FXCollections.observableArrayList();
-        String homeDir = System.getProperty("user.home");
-        String containersDir = homeDir + File.separator + "containers";
+        String containersDir = "/root/containers";
         File containerDir = new File(containersDir);
 
         if (containerDir.exists() && containerDir.isDirectory()) {

@@ -82,37 +82,40 @@ public class EncryptionManager {
         }
         PointerByReference cdRef = new PointerByReference();
         Pointer cd = null;
+        String loopDevice = null;
 
         try {
             // 1. Создание файла-контейнера
             logger.info("Создание файла-контейнера размером " + sizeMB + "MB");
             Process truncate = java.lang.Runtime.getRuntime().exec(
-                String.format("truncate -s %dM %s", sizeMB, containerPath)
+                String.format("sudo truncate -s %dM %s", sizeMB, containerPath)
             );
             if (truncate.waitFor(30, TimeUnit.SECONDS) && truncate.exitValue() != 0) {
-                try (BufferedReader errorReader = new BufferedReader(
-                        new InputStreamReader(truncate.getErrorStream()))) {
-                    String errorLine;
-                    while ((errorLine = errorReader.readLine()) != null) {
-                        logger.severe("Ошибка truncate: " + errorLine);
-                    }
-                }
                 throw new IOException("Ошибка при создании файла контейнера");
             }
 
-            // 2. Инициализация cryptsetup
+            // 2. Создание loop-устройства
+            logger.info("Создание loop-устройства");
+            Process losetup = java.lang.Runtime.getRuntime().exec(
+                String.format("sudo losetup -f --show %s", containerPath)
+            );
+            loopDevice = readProcessOutput(losetup);
+            if (loopDevice == null || loopDevice.isEmpty()) {
+                throw new IOException("Не удалось создать loop-устройство");
+            }
+            loopDevice = loopDevice.trim();
+            logger.info("Создано loop-устройство: " + loopDevice);
+
+            // 3. Инициализация cryptsetup
             logger.info("Инициализация cryptsetup");
-            int result = crypt.crypt_init(cdRef, containerPath);
+            int result = crypt.crypt_init(cdRef, loopDevice);
             if (result < 0) {
                 throw new IOException("Ошибка при инициализации cryptsetup: " + result);
             }
             cd = cdRef.getValue();
 
-            // 3. Форматирование LUKS
-            logger.info("Форматирование LUKS");
-            String fullCipher = convertAlgorithmFormat(algorithm);
-            checkCipherSupport(fullCipher);
-
+            // 4. Форматирование LUKS2
+            logger.info("Форматирование LUKS2");
             result = crypt.crypt_format(
                     cd,
                     "LUKS2",            // тип устройства
@@ -123,23 +126,51 @@ public class EncryptionManager {
                     512,                // volume_key_size (512 бит для XTS)
                     null                // params
             );
+            if (result < 0) {
+                throw new IOException("Ошибка при форматировании LUKS2: " + result);
+            }
 
-            // 4. Добавление ключа
+            // 5. Добавление ключа
             logger.info("Добавление ключа шифрования");
             result = crypt.crypt_keyslot_add_by_volume_key(cd, -1, null, 0, password, password.length());
+            if (result < 0) {
+                throw new IOException("Ошибка при добавлении ключа: " + result);
+            }
 
-            // 5. Открытие устройства
-            logger.info("Открытие зашифрованного устройства");
-            result = crypt.crypt_activate_by_passphrase(cd, name, -1, password, password.length(), 0);
+            // 6. Активация устройства
+            logger.info("Активация устройства");
+            String mappedName = "crypt_" + name;
+            result = crypt.crypt_activate_by_passphrase(cd, mappedName, -1, password, password.length(), 0);
+            if (result < 0) {
+                throw new IOException("Ошибка при активации устройства: " + result);
+            }
 
-            // 6. Создание файловой системы
+            // 7. Создание файловой системы
             logger.info("Создание файловой системы");
             createFileSystem(name, fsType);
+
+            // 8. Деактивация устройства
+            logger.info("Деактивация устройства");
+            result = crypt.crypt_deactivate(cd, mappedName);
+            if (result < 0) {
+                throw new IOException("Ошибка при деактивации устройства: " + result);
+            }
 
             logger.info("Контейнер успешно создан: " + containerPath);
         } catch (InterruptedException e) {
             throw new IOException("Процесс был прерван", e);
         } finally {
+            // Отсоединяем loop-устройство
+            if (loopDevice != null) {
+                try {
+                    Process losetup = java.lang.Runtime.getRuntime().exec(
+                        String.format("sudo losetup -d %s", loopDevice)
+                    );
+                    losetup.waitFor(30, TimeUnit.SECONDS);
+                } catch (Exception e) {
+                    logger.warning("Ошибка при отсоединении loop-устройства: " + e.getMessage());
+                }
+            }
             if (cd != null) {
                 crypt.crypt_free(cd);
             }
@@ -174,6 +205,12 @@ public class EncryptionManager {
         Pointer cd = null;
 
         try {
+            // Проверяем существование контейнера
+            File container = new File(containerPath);
+            if (!container.exists()) {
+                throw new IOException("Контейнер не найден: " + containerPath);
+            }
+
             // 1. Создание loop-устройства
             logger.info("Создание loop-устройства для " + containerPath);
             Process losetup = java.lang.Runtime.getRuntime().exec(
@@ -184,12 +221,13 @@ public class EncryptionManager {
                 throw new IOException("Не удалось создать loop-устройство");
             }
             loopDevice = loopDevice.trim();
+            logger.info("Создано loop-устройство: " + loopDevice);
 
             // 2. Инициализация cryptsetup
             logger.info("Инициализация cryptsetup");
             int result = crypt.crypt_init(cdRef, loopDevice);
             if (result < 0) {
-                throw new IOException("Ошибка при инициализации: " + result);
+                throw new IOException("Ошибка при инициализации cryptsetup: " + result);
             }
             cd = cdRef.getValue();
 
@@ -197,7 +235,7 @@ public class EncryptionManager {
             logger.info("Загрузка заголовка LUKS");
             result = crypt.crypt_load(cd, 0, null);
             if (result < 0) {
-                throw new IOException("Ошибка при загрузке заголовка: " + result);
+                throw new IOException("Ошибка при загрузке заголовка LUKS: " + result);
             }
 
             // 4. Активация контейнера
@@ -205,17 +243,47 @@ public class EncryptionManager {
             String mappedName = "crypt_" + name;
             result = crypt.crypt_activate_by_passphrase(cd, mappedName, -1, password, password.length(), 0);
             if (result < 0) {
-                throw new IOException("Ошибка при активации: " + result);
+                throw new IOException("Ошибка при активации контейнера: " + result);
             }
+            logger.info("Контейнер активирован как: " + mappedName);
 
             // 5. Монтирование файловой системы
             logger.info("Монтирование файловой системы");
             String devicePath = "/dev/mapper/" + mappedName;
+            
+            // Проверяем, что устройство существует
+            File device = new File(devicePath);
+            if (!device.exists()) {
+                throw new IOException("Устройство не найдено: " + devicePath);
+            }
+
+            // Создаем точку монтирования, если не существует
+            File mountDir = new File(mountPoint);
+            if (!mountDir.exists()) {
+                mountDir.mkdirs();
+            }
+
             Process mount = java.lang.Runtime.getRuntime().exec(
                     String.format("sudo mount %s %s", devicePath, mountPoint)
             );
             if (mount.waitFor(30, TimeUnit.SECONDS) && mount.exitValue() != 0) {
+                try (BufferedReader errorReader = new BufferedReader(
+                        new InputStreamReader(mount.getErrorStream()))) {
+                    String error = errorReader.readLine();
+                    if (error != null) {
+                        throw new IOException("Ошибка при монтировании: " + error);
+                    }
+                }
                 throw new IOException("Ошибка при монтировании файловой системы");
+            }
+
+            // 6. Изменение прав на файловой системе
+            logger.info("Изменение прав на файловой системе");
+            Process chown = java.lang.Runtime.getRuntime().exec(
+                    String.format("sudo chown -R %s:%s %s", System.getProperty("user.name"), System.getProperty("user.name"), mountPoint)
+            );
+            if (chown.waitFor(30, TimeUnit.SECONDS) && chown.exitValue() != 0) {
+                throw new IOException("Ошибка при изменении прав");
             }
 
             logger.info("Контейнер успешно смонтирован в " + mountPoint);
@@ -278,9 +346,6 @@ public class EncryptionManager {
         }
     }
 
-    /**
-     * Создает файловую систему внутри контейнера.
-     */
     private static void createFileSystem(String name, String fsType) throws IOException {
         String devicePath = "/dev/mapper/crypt_" + name;
         String[] mkfsCommand;

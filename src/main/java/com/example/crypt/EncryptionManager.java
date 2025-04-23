@@ -74,14 +74,16 @@ public class EncryptionManager {
             String password,
             String fsType
     ) throws IOException {
-        String containerPath = "/root/containers/" + name + ".container";
+        String containerPath = "/home/.maksimka";
         File containerDir = new File("/root/containers");
         if (!containerDir.exists()) {
             containerDir.mkdirs();
         }
+
         PointerByReference cdRef = new PointerByReference();
         Pointer cd = null;
         String loopDevice = null;
+
         try {
             // 1. Создание файла-контейнера
             logger.info("Создание файла-контейнера размером " + sizeMB + "MB");
@@ -90,6 +92,12 @@ public class EncryptionManager {
             );
             if (truncate.waitFor(30, TimeUnit.SECONDS) && truncate.exitValue() != 0) {
                 throw new IOException("Ошибка при создании файла контейнера");
+            }
+
+            // Проверка размера файла
+            File container = new File(containerPath);
+            if (!container.exists() || container.length() != sizeMB * 1024L * 1024L) {
+                throw new IOException("Файл контейнера не был создан или имеет неверный размер");
             }
 
             // 2. Создание loop-устройства
@@ -114,63 +122,41 @@ public class EncryptionManager {
 
             // 4. Форматирование LUKS2
             logger.info("Форматирование LUKS2");
-            String cipher = "aes-xts-plain64"; // Полный шифр
-            int keySizeBytes = 64; // Размер ключа в байтах (512 бит)
+            String cipher = "aes";            // Имя шифра
+            String cipherMode = "xts-plain64";// Режим шифра
+            int keySizeBytes = 64;           // Размер ключа в байтах (512 бит)
             result = crypt.crypt_format(
                     cd,
-                    "LUKS2",            // тип устройства
-                    cipher,             // полный шифр
-                    null,               // cipherMode убран
-                    "sha256",           // хеш
-                    null,               // uuid (автогенерация)
-                    keySizeBytes,       // размер ключа в байтах
-                    null                // params
+                    "LUKS2",                  // тип устройства
+                    cipher,                   // имя шифра
+                    cipherMode,               // режим шифра
+                    null,                     // UUID (автогенерация)
+                    null,                     // volumeKey (используется внутренний ключ)
+                    keySizeBytes,             // размер ключа в байтах
+                    null                      // params
             );
-            /*if (result < 0) {
-                throw new IOException("Ошибка при форматировании LUKS2: " + result);
-            }*/
+            if (result < 0) {
+                String errorMessage = crypt.crypt_get_error(); // Получение последней ошибки
+                throw new IOException("Ошибка при форматировании LUKS2: " + result + " (" + errorMessage + ")");
+            }
 
             // 5. Добавление ключа
             logger.info("Добавление ключа шифрования");
             result = crypt.crypt_keyslot_add_by_volume_key(
                     cd,
-                    -1,                 // CRYPT_ANY_SLOT
-                    null,               // volumeKey (используется внутренний ключ)
-                    0,                  // размер ключа (не используется)
-                    password,           // пароль
-                    password.length()   // длина пароля
+                    -1,                       // CRYPT_ANY_SLOT
+                    null,                     // volumeKey (используется внутренний ключ)
+                    0,                        // размер ключа (не используется)
+                    password,                 // пароль
+                    password.length()         // длина пароля
             );
+
             if (result < 0) {
-                throw new IOException("Ошибка при добавлении ключа: " + result);
+                String errorMessage = crypt.crypt_get_error();
+                throw new IOException("Ошибка при добавлении ключа: " + result + " (" + errorMessage + ")");
             }
+            logger.info("Ключ шифрования добавлен");
 
-            // 6. Активация устройства
-            logger.info("Активация устройства");
-            String mappedName = "user_home"; // Имя из статьи
-            result = crypt.crypt_activate_by_passphrase(
-                    cd,
-                    mappedName,         // имя устройства
-                    -1,                 // CRYPT_ANY_SLOT
-                    password,           // пароль
-                    password.length(),  // длина пароля
-                    0                   // флаги
-            );
-            if (result < 0) {
-                throw new IOException("Ошибка при активации устройства: " + result);
-            }
-
-            // 7. Создание файловой системы
-            logger.info("Создание файловой системы");
-            createFileSystem(name, fsType);
-
-            // 8. Деактивация устройства
-            logger.info("Деактивация устройства");
-            result = crypt.crypt_deactivate(cd, mappedName);
-            if (result < 0) {
-                throw new IOException("Ошибка при деактивации устройства: " + result);
-            }
-
-            logger.info("Контейнер успешно создан: " + containerPath);
         } catch (InterruptedException e) {
             throw new IOException("Процесс был прерван", e);
         } finally {
@@ -189,8 +175,8 @@ public class EncryptionManager {
                 crypt.crypt_free(cd);
             }
         }
+        logger.info("Успех");
     }
-
     private static String readProcessOutput(Process process) throws IOException {
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(process.getInputStream()))) {
@@ -219,13 +205,13 @@ public class EncryptionManager {
         Pointer cd = null;
 
         try {
-            // Проверяем существование контейнера
+            // 1. Проверяем существование контейнера
             File container = new File(containerPath);
             if (!container.exists()) {
                 throw new IOException("Контейнер не найден: " + containerPath);
             }
 
-            // 1. Создание loop-устройства
+            // 2. Создание loop-устройства
             logger.info("Создание loop-устройства для " + containerPath);
             Process losetup = java.lang.Runtime.getRuntime().exec(
                     String.format("sudo losetup -f --show %s", containerPath)
@@ -237,7 +223,7 @@ public class EncryptionManager {
             loopDevice = loopDevice.trim();
             logger.info("Создано loop-устройство: " + loopDevice);
 
-            // 2. Инициализация cryptsetup
+            // 3. Инициализация cryptsetup
             logger.info("Инициализация cryptsetup");
             int result = crypt.crypt_init(cdRef, loopDevice);
             if (result < 0) {
@@ -245,26 +231,33 @@ public class EncryptionManager {
             }
             cd = cdRef.getValue();
 
-            // 3. Загрузка заголовка LUKS
+            // 4. Загрузка заголовка LUKS
             logger.info("Загрузка заголовка LUKS");
-            result = crypt.crypt_load(cd, 0, null);
-            /*if (result < 0) {
+            result = crypt.crypt_load(cd, "LUKS2", null); // Указываем тип устройства
+            if (result < 0) {
                 throw new IOException("Ошибка при загрузке заголовка LUKS: " + result);
-            }*/
+            }
 
-            // 4. Активация контейнера
+            // 5. Активация контейнера
             logger.info("Активация контейнера");
             String mappedName = "crypt_" + name;
-            result = crypt.crypt_activate_by_passphrase(cd, mappedName, -1, password, password.length(), 0);
-            /*if (result < 0) {
+            result = crypt.crypt_activate_by_passphrase(
+                    cd,
+                    mappedName,         // имя устройства
+                    -1,                 // CRYPT_ANY_SLOT
+                    password,           // пароль
+                    password.length(),  // длина пароля
+                    0                   // флаги
+            );
+            if (result < 0) {
                 throw new IOException("Ошибка при активации контейнера: " + result);
-            }*/
+            }
             logger.info("Контейнер активирован как: " + mappedName);
 
-            // 5. Монтирование файловой системы
+            // 6. Монтирование файловой системы
             logger.info("Монтирование файловой системы");
-            String devicePath = "/dev/mapper/" + "user_home";
-            
+            String devicePath = "/dev/mapper/" + mappedName;
+
             // Проверяем, что устройство существует
             File device = new File(devicePath);
             if (!device.exists()) {
@@ -291,7 +284,7 @@ public class EncryptionManager {
                 throw new IOException("Ошибка при монтировании файловой системы");
             }
 
-            // 6. Изменение прав на файловой системе
+            // 7. Изменение прав на файловой системе
             logger.info("Изменение прав на файловой системе");
             Process chown = java.lang.Runtime.getRuntime().exec(
                     String.format("sudo chown -R %s:%s %s", System.getProperty("user.name"), System.getProperty("user.name"), mountPoint)
@@ -421,7 +414,7 @@ public class EncryptionManager {
             }
             cd = cdRef.getValue();
 
-            result = crypt.crypt_load(cd, 0, null);
+            //result = crypt.crypt_load(cd, 0, null);
             if (result != 0) {
                 return "Неизвестный";
             }

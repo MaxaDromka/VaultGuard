@@ -89,6 +89,11 @@
                     <Tooltip text="Закрыть окно редактирования"/>
                 </tooltip>
             </Button>
+            <Button onAction="#handleCreateContainer" style="-fx-background-color: #3498db; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 10 20;" text="Создать контейнер">
+                <tooltip>
+                    <Tooltip text="Создать новый зашифрованный контейнер"/>
+                </tooltip>
+            </Button>
         </HBox>
     </bottom>
 </BorderPane>

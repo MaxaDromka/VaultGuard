@@ -309,13 +309,13 @@ public class EncryptionManager {
     public static void unmountContainer(String name, String mountPoint) throws IOException {
         String mappedName = "crypt_" + name;
         PointerByReference cdRef = new PointerByReference();
-        Pointer cd = cdRef.getValue();
+        Pointer cd = null;
 
         try {
             // 1. Размонтирование файловой системы
             logger.info("Размонтирование файловой системы из " + mountPoint);
             Process umount = java.lang.Runtime.getRuntime().exec(
-                String.format("umount %s", mountPoint)
+                    String.format("sudo umount %s", mountPoint)
             );
             if (umount.waitFor(30, TimeUnit.SECONDS) && umount.exitValue() != 0) {
                 throw new IOException("Ошибка при размонтировании файловой системы");
@@ -323,11 +323,11 @@ public class EncryptionManager {
 
             // 2. Закрытие зашифрованного контейнера
             logger.info("Закрытие зашифрованного контейнера");
-            cd = runtime.getMemoryManager().allocateTemporary(java.lang.Runtime.getRuntime().availableProcessors() * 8, true);
             int result = crypt.crypt_init_by_name(cdRef, mappedName);
             if (result < 0) {
                 throw new IOException("Ошибка при инициализации: " + result);
             }
+            cd = cdRef.getValue();
 
             result = crypt.crypt_deactivate(cd, mappedName);
             if (result < 0) {
@@ -337,7 +337,7 @@ public class EncryptionManager {
             // 3. Отключение loop-устройства
             logger.info("Отключение loop-устройства");
             Process losetup = java.lang.Runtime.getRuntime().exec(
-                "losetup -d $(losetup -j " + name + ".container | cut -d':' -f1)"
+                    "sudo losetup -d $(losetup -j /home/.maksimka | cut -d':' -f1)"
             );
             if (losetup.waitFor(30, TimeUnit.SECONDS) && losetup.exitValue() != 0) {
                 throw new IOException("Ошибка при отключении loop-устройства");

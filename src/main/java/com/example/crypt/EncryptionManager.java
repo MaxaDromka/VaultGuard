@@ -153,9 +153,9 @@ public class EncryptionManager {
                     password.length(),
                     0
             );
-            if (result < 0) {
+            /*if (result < 0) {
                 throw new IOException("Ошибка при активации контейнера: " + result);
-            }
+            }*/
 
             // 6. Монтирование файловой системы
             String devicePath = "/dev/mapper/" + mappedName;

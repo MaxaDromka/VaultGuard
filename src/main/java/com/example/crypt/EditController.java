@@ -10,6 +10,7 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextInputDialog;
 import javafx.stage.Stage;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
 
@@ -39,6 +40,7 @@ public class EditController {
                 if (result.isPresent()) {
                     String password = result.get();
                     String mountPoint = System.getProperty("user.home") + "/mnt/" + partition.getName();
+                    new File(mountPoint).mkdirs(); // Создаем папку для монтирования
                     EncryptionManager.mountContainer(partition.getPath(), partition.getName(), password, mountPoint);
                     partition.setIsMounted(true);
                     partition.getMountButton().setText("Размонтировать");
@@ -59,7 +61,7 @@ public class EditController {
     private void handleDeleteAction(Partition partition) {
         Alert alert = new Alert(AlertType.CONFIRMATION);
         alert.setTitle("Подтверждение удаления");
-        alert.setHeaderText("Вы уверены, что хотите деактивировать диск " + partition.getName() + "?");
+        alert.setHeaderText("Вы уверены, что хотите удалить диск " + partition.getName() + "?");
         alert.setContentText("Это действие нельзя отменить.");
 
         Optional<ButtonType> result = alert.showAndWait();
@@ -70,10 +72,16 @@ public class EditController {
                     EncryptionManager.unmountContainer(partition.getName(), mountPoint);
                 }
 
+                // Удаляем файл контейнера
+                File containerFile = new File(partition.getPath());
+                if (!containerFile.delete()) {
+                    throw new IOException("Не удалось удалить файл контейнера");
+                }
+
                 partitions.remove(partition);
-                showSuccessAlert("Диск успешно деактивирован");
+                showSuccessAlert("Диск успешно удален");
             } catch (IOException e) {
-                showErrorAlert("Ошибка при деактивации диска: " + e.getMessage());
+                showErrorAlert("Ошибка при удалении диска: " + e.getMessage());
             }
         }
     }
@@ -112,7 +120,9 @@ public class EditController {
     @FXML
     private void refreshDiskList() {
         partitions.clear();
-        partitions.addAll(EncryptionManager.getContainersList());
+        ObservableList<Partition> containers = EncryptionManager.getContainersList();
+        System.out.println("Количество найденных контейнеров: " + containers.size()); // Логирование
+        partitions.addAll(containers);
         partitionsTable.setItems(partitions);
     }
 }

@@ -23,16 +23,23 @@
     <GridPane vgap="15" hgap="20" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 20;">
         <padding><Insets topRightBottomLeft="20" /></padding>
 
-        <Label text="Выберите диск:" GridPane.columnIndex="0" GridPane.rowIndex="0" style="-fx-font-size: 14px; -fx-font-weight: bold;">
+        <Label text="Выберите папку:" GridPane.columnIndex="0" GridPane.rowIndex="0" style="-fx-font-size: 14px; -fx-font-weight: bold;">
             <tooltip>
-                <Tooltip text="Выберите диск для создания зашифрованного раздела" />
+                <Tooltip text="Выберите папку для создания зашифрованного диска" />
             </tooltip>
         </Label>
-        <ComboBox fx:id="diskBox" prefWidth="300" GridPane.columnIndex="1" GridPane.rowIndex="0" style="-fx-background-radius: 5;">
-            <tooltip>
-                <Tooltip text="Список доступных дисков" />
-            </tooltip>
-        </ComboBox>
+        <HBox spacing="10" GridPane.columnIndex="1" GridPane.rowIndex="0">
+            <TextField fx:id="directoryField" editable="false" prefWidth="250" style="-fx-background-radius: 5;">
+                <tooltip>
+                    <Tooltip text="Путь к выбранной папке" />
+                </tooltip>
+            </TextField>
+            <Button onAction="#handleChooseDirectory" text="Обзор..." style="-fx-background-color: #2ecc71; -fx-text-fill: white; -fx-background-radius: 5; -fx-padding: 8 15;">
+                <tooltip>
+                    <Tooltip text="Открыть диалог выбора папки" />
+                </tooltip>
+            </Button>
+        </HBox>
         <Label text="Размер под шифрованные данные (МБ):" GridPane.columnIndex="0" GridPane.rowIndex="1" style="-fx-font-size: 14px; -fx-font-weight: bold;">
             <tooltip>
                 <Tooltip text="Укажите размер зашифрованного контейнера в мегабайтах" />

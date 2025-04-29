@@ -7,6 +7,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
 
+import java.io.IOException;
+
 public class EncryptionSettingsController {
     @FXML private ComboBox<String> algorithmBox;
     @FXML private ComboBox<String> fsTypeBox; // Новое поле для выбора файловой системы
@@ -59,7 +61,8 @@ public class EncryptionSettingsController {
 
         if (usePasswordCheck.isSelected()) {
             valid = !passwordField.getText().isEmpty()
-                    && passwordField.getText().equals(confirmPasswordField.getText());
+                    && passwordField.getText().equals(confirmPasswordField.getText())
+                    && passwordField.getText().length() >= 8; // Минимальная длина пароля
         }
 
         encryptBtn.setDisable(!valid);
@@ -75,14 +78,40 @@ public class EncryptionSettingsController {
 
     @FXML
     private void handleBack() {
-        // Закрываем текущее окно и возвращаемся к предыдущему
-        Stage stage = (Stage) encryptBtn.getScene().getWindow();
-        stage.close();
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/creation_window.fxml"));
+            Parent root = loader.load();
 
+            HelloController controller = loader.getController();
+            controller.setStage((Stage) encryptBtn.getScene().getWindow());
+
+            Stage stage = (Stage) encryptBtn.getScene().getWindow();
+            stage.setScene(new Scene(root));
+        } catch (IOException e) {
+            showAlert("Ошибка", "Не удалось вернуться к предыдущему экрану: " + e.getMessage(), Alert.AlertType.ERROR);
+        }
     }
 
     @FXML
     private void handleEncrypt() {
+        // Проверяем входные данные
+        if (containerPath == null || containerPath.isEmpty()) {
+            showAlert("Ошибка", "Путь к контейнеру не указан.", Alert.AlertType.ERROR);
+            return;
+        }
+        if (containerSize <= 0) {
+            showAlert("Ошибка", "Размер контейнера должен быть больше 0 МБ.", Alert.AlertType.ERROR);
+            return;
+        }
+        if (containerName == null || containerName.isEmpty()) {
+            showAlert("Ошибка", "Имя контейнера не указано.", Alert.AlertType.ERROR);
+            return;
+        }
+        if (usePasswordCheck.isSelected() && passwordField.getText().isEmpty()) {
+            showAlert("Ошибка", "Пароль не может быть пустым.", Alert.AlertType.ERROR);
+            return;
+        }
+
         // Логика шифрования
         String algorithm = algorithmBox.getValue();
         String fsType = fsTypeBox.getValue(); // Получаем выбранную файловую систему

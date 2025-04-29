@@ -6,17 +6,14 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
 
 public class HelloController {
-    @FXML private ComboBox<String> diskBox;
+    @FXML private TextField directoryField; // Поле для отображения выбранной папки
     @FXML private Slider sizeSlider;
     @FXML private TextField sizeField;
     @FXML private TextField nameField;
@@ -26,11 +23,7 @@ public class HelloController {
 
     @FXML
     private void initialize() {
-        // Заполняем список дисков
-        List<String> disks = getAvailableDisks();
-        diskBox.getItems().addAll(disks);
-        diskBox.getSelectionModel().selectFirst();
-
+        // Настройка ползунка и текстового поля
         sizeSlider.setMin(100);
         sizeSlider.setMax(5000);
         sizeSlider.setValue(1000);
@@ -52,32 +45,25 @@ public class HelloController {
         });
 
         // Валидация полей
+        directoryField.textProperty().addListener((obs, oldVal, newVal) -> validateFields());
         nameField.textProperty().addListener((obs, oldVal, newVal) -> validateFields());
-        sizeField.textProperty().addListener((obs, oldVal, newVal) -> validateFields());
     }
 
-    private List<String> getAvailableDisks() {
-        List<String> disks = new ArrayList<>();
-        try {
-            Process process = Runtime.getRuntime().exec("lsblk -o NAME,SIZE,TYPE -n -l");
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+    @FXML
+    private void handleChooseDirectory(ActionEvent event) {
+        DirectoryChooser directoryChooser = new DirectoryChooser();
+        directoryChooser.setTitle("Выберите папку для зашифрованного диска");
+        File selectedDirectory = directoryChooser.showDialog(((Button) event.getSource()).getScene().getWindow());
 
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (line.contains("disk")) {
-                    String[] parts = line.split("\\s+");
-                    disks.add("/dev/" + parts[0]);
-                }
-            }
-        } catch (IOException e) {
-            System.err.println("Ошибка при получении списка дисков: " + e.getMessage());
+        if (selectedDirectory != null) {
+            directoryField.setText(selectedDirectory.getAbsolutePath());
+            validateFields(); // Проверяем, можно ли активировать кнопку "Далее"
         }
-        return disks;
     }
 
     private void validateFields() {
         boolean valid = !nameField.getText().isEmpty()
-                && diskBox.getValue() != null;
+                && !directoryField.getText().isEmpty();
         nextBtn.setDisable(!valid);
     }
 
@@ -88,19 +74,12 @@ public class HelloController {
 
     @FXML
     private void handleNext() {
-        String disk = diskBox.getValue();
+        String selectedDirectory = directoryField.getText();
         int size = (int) sizeSlider.getValue();
         String name = nameField.getText();
 
-        // Создаем директорию для контейнеров, если она не существует
-        String containersDir = System.getProperty("user.home") + File.separator + ".crypt" + File.separator + "containers";
-        File dir = new File(containersDir);
-        if (!dir.exists()) {
-            dir.mkdirs();
-        }
-
         // Формируем путь к контейнеру
-        String containerPath = containersDir + File.separator + name + ".container";
+        String containerPath = selectedDirectory + File.separator + "." + name;
 
         // Проверяем, не существует ли уже контейнер с таким именем
         File containerFile = new File(containerPath);
@@ -134,14 +113,5 @@ public class HelloController {
 
     public void setStage(Stage stage) {
         this.stage = stage;
-    }
-
-    @FXML
-    private TextArea helpTextArea;
-
-    @FXML
-    private void handleCloseHelp(ActionEvent event) {
-        Stage stage = (Stage) ((Button) event.getSource()).getScene().getWindow();
-        stage.close();
     }
 }

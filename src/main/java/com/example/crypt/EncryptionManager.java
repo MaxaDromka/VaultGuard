@@ -78,7 +78,7 @@ public class EncryptionManager {
             }
             cd = cdRef.getValue();
 
-            // 6. Проверяем и форматируем LUKS2
+            // 6. Форматирование LUKS2
             logger.info("Форматирование LUKS2");
             int loadResult = crypt.crypt_load(cd, "LUKS2", null);
             if (loadResult == 0) {
@@ -113,7 +113,49 @@ public class EncryptionManager {
                 throw new IOException("Ошибка при добавлении ключа: " + keyslotResult);
             }
 
-            logger.info("Контейнер успешно создан");
+            // 8. Активация контейнера
+            logger.info("Активация контейнера");
+            String mappedName = "crypt_" + name;
+            int activateResult = crypt.crypt_activate_by_passphrase(
+                    cd,
+                    mappedName,
+                    -1,
+                    password,
+                    password.length(),
+                    0
+            );
+            if (activateResult < 0) {
+                throw new IOException("Ошибка при активации контейнера: " + activateResult);
+            }
+
+            // 9. Создание файловой системы
+            logger.info("Создание файловой системы типа " + fsType);
+            String devicePath = "/dev/mapper/" + mappedName;
+            Process mkfs = Runtime.getRuntime().exec(String.format("sudo mkfs.%s %s", fsType, devicePath));
+            if (!mkfs.waitFor(30, TimeUnit.SECONDS) || mkfs.exitValue() != 0) {
+                throw new IOException("Ошибка при создании файловой системы");
+            }
+
+            // 10. Настройка автоматического монтирования через /etc/fstab
+            logger.info("Настройка автоматического монтирования через /etc/fstab");
+            String mountPoint = "/mnt/" + name;
+            String uuid = getUUID(devicePath);
+            String fstabEntry = String.format(
+                    "UUID=%s  %s  %s  defaults,nofail  0  2\n",
+                    uuid,
+                    mountPoint,
+                    fsType
+            );
+
+            // Добавляем запись в /etc/fstab
+            Process appendFstab = Runtime.getRuntime().exec(
+                    String.format("echo '%s' | sudo tee -a /etc/fstab", fstabEntry)
+            );
+            if (!appendFstab.waitFor(30, TimeUnit.SECONDS) || appendFstab.exitValue() != 0) {
+                throw new IOException("Ошибка при добавлении записи в /etc/fstab");
+            }
+
+            logger.info("Контейнер успешно создан и настроен для автоматического монтирования");
         } catch (InterruptedException e) {
             throw new IOException("Процесс был прерван", e);
         } finally {
@@ -127,6 +169,18 @@ public class EncryptionManager {
             if (cd != null) {
                 crypt.crypt_free(cd);
             }
+        }
+    }
+
+    private static String getUUID(String devicePath) throws IOException {
+        logger.info("Получение UUID устройства: " + devicePath);
+        Process blkid = Runtime.getRuntime().exec(String.format("sudo blkid -s UUID -o value %s", devicePath));
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(blkid.getInputStream()))) {
+            String uuid = reader.readLine();
+            if (uuid == null || uuid.isEmpty()) {
+                throw new IOException("Не удалось получить UUID для устройства: " + devicePath);
+            }
+            return uuid.trim();
         }
     }
 
@@ -153,39 +207,23 @@ public class EncryptionManager {
      * Монтирует зашифрованный контейнер.
      */
     public static void mountContainer(String containerPath, String name, String password, String mountPoint) throws IOException {
-        String loopDevice = null;
         PointerByReference cdRef = new PointerByReference();
         Pointer cd = null;
 
         try {
-            // 1. Проверяем существование контейнера
-            File container = new File(containerPath);
-            if (!container.exists()) {
-                throw new IOException("Контейнер не найден: " + containerPath);
-            }
-
-            // 2. Создание loop-устройства
-            Process losetup = Runtime.getRuntime().exec(String.format("sudo losetup -f --show %s", containerPath));
-            loopDevice = readProcessOutput(losetup);
-            if (loopDevice == null || loopDevice.isEmpty()) {
-                throw new IOException("Не удалось создать loop-устройство");
-            }
-            loopDevice = loopDevice.trim();
-
-            // 3. Инициализация cryptsetup
-            int result = crypt.crypt_init(cdRef, loopDevice);
+            // 1. Загрузка заголовка LUKS
+            int result = crypt.crypt_init(cdRef, containerPath);
             if (result < 0) {
                 throw new IOException("Ошибка при инициализации cryptsetup: " + result);
             }
             cd = cdRef.getValue();
 
-            // 4. Загрузка заголовка LUKS
             result = crypt.crypt_load(cd, "LUKS2", null);
             if (result < 0) {
                 throw new IOException("Ошибка при загрузке заголовка LUKS: " + result);
             }
 
-            // 5. Активация контейнера
+            // 2. Активация контейнера
             String mappedName = "crypt_" + name;
             File device = new File("/dev/mapper/" + mappedName);
 
@@ -200,12 +238,11 @@ public class EncryptionManager {
             System.out.println("Попытка активации устройства: " + mappedName);
             result = crypt.crypt_activate_by_passphrase(cd, mappedName, -1, password, password.length(), 0);
             if (result < 0) {
-                String errorMessage = crypt.crypt_get_error();
-                throw new IOException("Ошибка при активации контейнера: " + result + " (" + errorMessage + ")");
+                throw new IOException("Ошибка при активации контейнера: " + result);
             }
             System.out.println("Устройство успешно активировано: " + mappedName);
 
-            // 6. Монтирование файловой системы
+            // 3. Монтирование файловой системы
             String devicePath = "/dev/mapper/" + mappedName;
             File mountDir = new File(mountPoint);
 
@@ -214,6 +251,16 @@ public class EncryptionManager {
                 if (!mountDir.mkdirs()) {
                     throw new IOException("Не удалось создать директорию для монтирования: " + mountPoint);
                 }
+            }
+
+            System.out.println("Проверка типа файловой системы...");
+            Process blkid = Runtime.getRuntime().exec(String.format("sudo blkid %s", devicePath));
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(blkid.getInputStream()))) {
+                String output = reader.readLine();
+                if (output == null || !output.contains("TYPE=")) {
+                    throw new IOException("Файловая система не найдена. Создайте её с помощью 'sudo mkfs.ext4 " + devicePath + "'");
+                }
+                System.out.println("Тип файловой системы: " + output);
             }
 
             System.out.println("Попытка монтирования устройства: " + devicePath + " в " + mountPoint);
@@ -231,19 +278,46 @@ public class EncryptionManager {
             }
             System.out.println("Файловая система успешно смонтирована в: " + mountPoint);
 
+            // 4. Регистрация устройства через udisks
+            //registerWithUdisks(devicePath);
+
+            // 5. Изменение прав доступа
+            Process chown = Runtime.getRuntime().exec(String.format("sudo chown -R %s:%s %s", System.getProperty("user.name"), System.getProperty("user.name"), mountPoint));
+            if (!chown.waitFor(30, TimeUnit.SECONDS) || chown.exitValue() != 0) {
+                throw new IOException("Ошибка при изменении прав");
+            }
+
         } catch (InterruptedException e) {
             throw new IOException("Процесс был прерван", e);
         } finally {
             if (cd != null) {
                 crypt.crypt_free(cd);
             }
-            if (loopDevice != null) {
-                try {
-                    Runtime.getRuntime().exec(String.format("sudo losetup -d %s", loopDevice)).waitFor();
-                } catch (Exception e) {
-                    System.err.println("Ошибка при отсоединении loop-устройства: " + e.getMessage());
-                }
+        }
+    }
+
+    private static void registerWithUdisks(String devicePath) throws IOException {
+        // Проверяем, существует ли устройство
+        File device = new File(devicePath);
+        if (!device.exists()) {
+            throw new IOException("Устройство не найдено: " + devicePath);
+        }
+
+        // Выполняем команду udisksctl
+        Process udisksctl = Runtime.getRuntime().exec(String.format("sudo udisksctl mount -b %s", devicePath));
+        try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(udisksctl.getErrorStream()))) {
+            String errorLine;
+            while ((errorLine = errorReader.readLine()) != null) {
+                System.err.println("Ошибка udisksctl: " + errorLine);
             }
+        }
+
+        try {
+            if (!udisksctl.waitFor(30, TimeUnit.SECONDS) || udisksctl.exitValue() != 0) {
+                throw new IOException("Ошибка при регистрации устройства через udisksctl");
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 

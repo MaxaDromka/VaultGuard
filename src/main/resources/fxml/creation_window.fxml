@@ -45,7 +45,7 @@
                 <Tooltip text="Укажите размер зашифрованного контейнера в мегабайтах" />
             </tooltip>
         </Label>
-        <Slider fx:id="sizeSlider" min="100" max="5000" value="1000" prefWidth="300" GridPane.columnIndex="1" GridPane.rowIndex="1">
+        <Slider fx:id="sizeSlider" min="100" max="10000" value="1000" prefWidth="300" GridPane.columnIndex="1" GridPane.rowIndex="1">
             <tooltip>
                 <Tooltip text="Измените размер зашифрованного контейнера с помощью ползунка" />
             </tooltip>

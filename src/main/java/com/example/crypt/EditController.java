@@ -10,8 +10,10 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextInputDialog;
 import javafx.stage.Stage;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Optional;
 
 public class EditController {
@@ -21,6 +23,7 @@ public class EditController {
     @FXML
     private void initialize() {
         refreshDiskList();
+        checkMountedStatus();
 
         partitions.forEach(partition -> {
             partition.getMountButton().setOnAction(e -> handleMountAction(partition));
@@ -28,9 +31,47 @@ public class EditController {
         });
     }
 
+    private void checkMountedStatus() {
+        for (Partition partition : partitions) {
+            if (isMounted(partition)) {
+                partition.setIsMounted(true);
+                partition.getMountButton().setText("Размонтировать");
+            } else {
+                partition.setIsMounted(false);
+                partition.getMountButton().setText("Монтировать");
+            }
+        }
+    }
+    private boolean isMounted(Partition partition) {
+        String mountPoint = System.getProperty("user.home") + "/mnt/" + partition.getName();
+        try {
+            Process process = Runtime.getRuntime().exec("mount");
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (line.contains(mountPoint)) {
+                        return true;
+                    }
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Ошибка при проверке состояния монтирования: " + e.getMessage());
+        }
+        return false;
+    }
+
     private void handleMountAction(Partition partition) {
         try {
-            if (!partition.isIsMounted()) {
+            if (partition.isIsMounted()) {
+                // Размонтирование
+                String mountPoint = System.getProperty("user.home") + "/mnt/" + partition.getName();
+                EncryptionManager.unmountContainer(partition.getName(), mountPoint);
+
+                partition.setIsMounted(false);
+                partition.getMountButton().setText("Монтировать");
+                showSuccessAlert("Диск успешно размонтирован");
+            } else {
+                // Монтирование
                 TextInputDialog dialog = new TextInputDialog();
                 dialog.setTitle("Монтирование диска");
                 dialog.setHeaderText("Введите пароль для диска " + partition.getName());
@@ -40,18 +81,14 @@ public class EditController {
                 if (result.isPresent()) {
                     String password = result.get();
                     String mountPoint = System.getProperty("user.home") + "/mnt/" + partition.getName();
-                    new File(mountPoint).mkdirs(); // Создаем папку для монтирования
+                    new File(mountPoint).mkdirs();
+
                     EncryptionManager.mountContainer(partition.getPath(), partition.getName(), password, mountPoint);
+
                     partition.setIsMounted(true);
                     partition.getMountButton().setText("Размонтировать");
                     showSuccessAlert("Диск успешно смонтирован в " + mountPoint);
                 }
-            } else {
-                String mountPoint = System.getProperty("user.home") + "/mnt/" + partition.getName();
-                EncryptionManager.unmountContainer(partition.getName(), mountPoint);
-                partition.setIsMounted(false);
-                partition.getMountButton().setText("Монтировать");
-                showSuccessAlert("Диск успешно размонтирован");
             }
         } catch (IOException e) {
             showErrorAlert("Ошибка при работе с диском: " + e.getMessage());

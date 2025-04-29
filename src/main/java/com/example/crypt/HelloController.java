@@ -25,7 +25,7 @@ public class HelloController {
     private void initialize() {
         // Настройка ползунка и текстового поля
         sizeSlider.setMin(100);
-        sizeSlider.setMax(5000);
+        sizeSlider.setMax(100000);
         sizeSlider.setValue(1000);
 
         // Синхронизация ползунка и текстового поля

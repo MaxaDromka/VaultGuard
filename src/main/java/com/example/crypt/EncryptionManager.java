@@ -279,7 +279,7 @@ public class EncryptionManager {
             System.out.println("Файловая система успешно смонтирована в: " + mountPoint);
 
             // 4. Регистрация устройства через udisks
-            //registerWithUdisks(devicePath);
+            registerWithUdisks(devicePath);
 
             // 5. Изменение прав доступа
             Process chown = Runtime.getRuntime().exec(String.format("sudo chown -R %s:%s %s", System.getProperty("user.name"), System.getProperty("user.name"), mountPoint));
@@ -297,21 +297,20 @@ public class EncryptionManager {
     }
 
     private static void registerWithUdisks(String devicePath) throws IOException {
-        // Проверяем, существует ли устройство
-        File device = new File(devicePath);
-        if (!device.exists()) {
-            throw new IOException("Устройство не найдено: " + devicePath);
-        }
-
-        // Выполняем команду udisksctl
-        Process udisksctl = Runtime.getRuntime().exec(String.format("sudo udisksctl mount -b %s", devicePath));
-        try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(udisksctl.getErrorStream()))) {
-            String errorLine;
-            while ((errorLine = errorReader.readLine()) != null) {
-                System.err.println("Ошибка udisksctl: " + errorLine);
+        // Проверяем, смонтировано ли устройство
+        Process mountCheck = Runtime.getRuntime().exec("mount");
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(mountCheck.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.contains(devicePath)) {
+                    System.out.println("Устройство уже смонтировано: " + devicePath);
+                    return; // Пропускаем регистрацию через udisksctl
+                }
             }
         }
 
+        // Если устройство не смонтировано, регистрируем через udisksctl
+        Process udisksctl = Runtime.getRuntime().exec(String.format("sudo udisksctl mount -b %s", devicePath));
         try {
             if (!udisksctl.waitFor(30, TimeUnit.SECONDS) || udisksctl.exitValue() != 0) {
                 throw new IOException("Ошибка при регистрации устройства через udisksctl");
@@ -326,8 +325,6 @@ public class EncryptionManager {
      */
     public static void unmountContainer(String name, String mountPoint) throws IOException {
         String mappedName = "crypt_" + name;
-        PointerByReference cdRef = new PointerByReference();
-        Pointer cd = null;
 
         try {
             // 1. Размонтирование файловой системы
@@ -337,24 +334,20 @@ public class EncryptionManager {
             }
 
             // 2. Закрытие зашифрованного контейнера
-            int result = crypt.crypt_init(cdRef, "/dev/mapper/" + mappedName);
+            PointerByReference cdRef = new PointerByReference();
+            Pointer cd = null;
+            int result = crypt.crypt_init_by_name(cdRef, mappedName);
             if (result < 0) {
-                throw new IOException("Ошибка при инициализации cryptsetup: " + result);
+                throw new IOException("Ошибка при инициализации: " + result);
             }
             cd = cdRef.getValue();
-
             result = crypt.crypt_deactivate(cd, mappedName);
             if (result < 0) {
                 throw new IOException("Ошибка при деактивации контейнера: " + result);
             }
 
-            logger.info("Контейнер успешно размонтирован");
         } catch (InterruptedException e) {
             throw new IOException("Процесс был прерван", e);
-        } finally {
-            if (cd != null) {
-                crypt.crypt_free(cd);
-            }
         }
     }
 

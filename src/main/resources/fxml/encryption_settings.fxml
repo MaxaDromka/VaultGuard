@@ -1,83 +1,90 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.text.Font?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.control.Tooltip?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
 
-<AnchorPane prefHeight="500.0" prefWidth="700.0" style="-fx-background-color: #f5f5f5;"
-            xmlns="http://javafx.com/javafx/17"
-            xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.example.crypt.EncryptionSettingsController">
-    <VBox spacing="25" prefWidth="650" alignment="TOP_CENTER" style="-fx-background-color: white; -fx-background-radius: 10; -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 10, 0, 0, 3);"
-          AnchorPane.topAnchor="20" AnchorPane.leftAnchor="25" AnchorPane.rightAnchor="25">
+<AnchorPane prefHeight="500.0" prefWidth="700.0" style="-fx-background-color: #f5f5f5;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.crypt.EncryptionSettingsController">
+    <VBox alignment="TOP_CENTER" prefWidth="650" spacing="25" style="-fx-background-color: white; -fx-background-radius: 10; -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 10, 0, 0, 3);" AnchorPane.leftAnchor="25" AnchorPane.rightAnchor="25" AnchorPane.topAnchor="20">
 
         <padding>
-            <Insets top="30" right="30" bottom="30" left="30"/>
+            <Insets bottom="30" left="30" right="30" top="30" />
         </padding>
-        <Label text="Настройки шифрования" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;">
+
+        <Label style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" text="Настройки шифрования">
             <VBox.margin>
-                <Insets bottom="10"/>
+                <Insets bottom="10" />
             </VBox.margin>
         </Label>
+
         <GridPane hgap="20" vgap="20">
-            <Label text="Алгоритм шифрования:" GridPane.columnIndex="0" GridPane.rowIndex="0"
-                   style="-fx-font-size: 14px; -fx-font-weight: bold;">
+            <Label style="-fx-font-size: 14px; -fx-font-weight: bold;" text="Алгоритм шифрования:" GridPane.columnIndex="0" GridPane.rowIndex="0">
                 <tooltip>
-                    <Tooltip text="Выберите алгоритм шифрования для вашего раздела"/>
+                    <Tooltip text="Выберите алгоритм шифрования для вашего раздела" />
                 </tooltip>
             </Label>
-            <ComboBox fx:id="algorithmBox" GridPane.columnIndex="1" GridPane.rowIndex="0"
-                      style="-fx-background-radius: 5;" prefWidth="350"/>
-            <CheckBox fx:id="usePasswordCheck" text="Использовать пароль"
-                      GridPane.columnIndex="0" GridPane.rowIndex="1" GridPane.columnSpan="2"
-                      style="-fx-font-size: 14px;"/>
-            <Label text="Пароль:" visible="false" GridPane.columnIndex="0" GridPane.rowIndex="2"
-                   fx:id="passwordLabel" style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
-            <PasswordField fx:id="passwordField" visible="false" GridPane.columnIndex="1" GridPane.rowIndex="2"
-                           style="-fx-background-radius: 5;"/>
-            <Label text="Подтверждение:" visible="false" GridPane.columnIndex="0" GridPane.rowIndex="3"
-                   fx:id="confirmLabel" style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
-            <PasswordField fx:id="confirmPasswordField" visible="false" GridPane.columnIndex="1" GridPane.rowIndex="3"
-                           style="-fx-background-radius: 5;"/>
-            <Button text="Сгенерировать пароль" visible="false"
-                    fx:id="generatePasswordBtn" GridPane.columnIndex="1" GridPane.rowIndex="4"
-                    onAction="#handleGeneratePassword"
-                    style="-fx-background-color: #3498db; -fx-text-fill: white; -fx-background-radius: 5; -fx-padding: 8 15;"/>
-            <Label text="Файловая система:" GridPane.columnIndex="0" GridPane.rowIndex="5"
-                   style="-fx-font-size: 14px; -fx-font-weight: bold;">
+            <ComboBox fx:id="algorithmBox" prefWidth="350" style="-fx-background-radius: 5;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+
+            <Label fx:id="passwordLabel" style="-fx-font-size: 14px; -fx-font-weight: bold;" text="Пароль:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+            <HBox spacing="5" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                <StackPane>
+                    <PasswordField fx:id="passwordField" prefWidth="300" style="-fx-background-radius: 5;" />
+                    <TextField fx:id="passwordVisibleField" managed="false" prefWidth="300" style="-fx-background-radius: 5;" visible="false" />
+                </StackPane>
+                <ToggleButton fx:id="showPasswordBtn" prefHeight="27.0" prefWidth="117.0" style="-fx-font-size: 12px; -fx-padding: 5 10;" text="Показать" />
+            </HBox>
+
+            <Label fx:id="confirmLabel" style="-fx-font-size: 14px; -fx-font-weight: bold;" text="Подтверждение:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+            <HBox spacing="5" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                <StackPane>
+                    <PasswordField fx:id="confirmPasswordField" prefWidth="300" style="-fx-background-radius: 5;" />
+                    <TextField fx:id="confirmPasswordVisibleField" managed="false" prefWidth="300" style="-fx-background-radius: 5;" visible="false" />
+                </StackPane>
+                <ToggleButton fx:id="showConfirmPasswordBtn" prefHeight="25.0" prefWidth="114.0" style="-fx-font-size: 12px; -fx-padding: 5 10;" text="Показать" />
+            </HBox>
+
+            <Button fx:id="generatePasswordBtn" onAction="#handleGeneratePassword" style="-fx-background-color: #3498db; -fx-text-fill: white; -fx-background-radius: 5; -fx-padding: 8 15;" text="Сгенерировать пароль" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+
+            <Label style="-fx-font-size: 14px; -fx-font-weight: bold;" text="Файловая система:" GridPane.columnIndex="0" GridPane.rowIndex="4">
                 <tooltip>
-                    <Tooltip text="Выберите тип файловой системы для вашего зашифрованного контейнера"/>
+                    <Tooltip text="Выберите тип файловой системы для вашего зашифрованного контейнера" />
                 </tooltip>
             </Label>
-            <ComboBox fx:id="fsTypeBox" GridPane.columnIndex="1" GridPane.rowIndex="5"
-                      style="-fx-background-radius: 5;" prefWidth="350"/>
+            <ComboBox fx:id="fsTypeBox" prefWidth="350" style="-fx-background-radius: 5;" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+
             <columnConstraints>
-                <ColumnConstraints prefWidth="200"/>
-                <ColumnConstraints prefWidth="350"/>
+                <ColumnConstraints prefWidth="200" />
+                <ColumnConstraints prefWidth="350" />
             </columnConstraints>
             <rowConstraints>
-                <RowConstraints prefHeight="40"/>
-                <RowConstraints prefHeight="40"/>
-                <RowConstraints prefHeight="40"/>
-                <RowConstraints prefHeight="40"/>
-                <RowConstraints prefHeight="40"/>
-                <RowConstraints prefHeight="40"/>
+                <RowConstraints prefHeight="40" />
+                <RowConstraints prefHeight="40" />
+                <RowConstraints prefHeight="40" />
+                <RowConstraints prefHeight="40" />
+                <RowConstraints prefHeight="40" />
             </rowConstraints>
         </GridPane>
-        <HBox spacing="20" alignment="CENTER_RIGHT">
-            <Button text="Назад" onAction="#handleBack"
-                    style="-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-background-radius: 5; -fx-padding: 10 20;">
+
+        <HBox alignment="CENTER_RIGHT" spacing="20">
+            <Button onAction="#handleBack" style="-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-background-radius: 5; -fx-padding: 10 20;" text="Назад">
                 <tooltip>
-                    <Tooltip text="Вернуться к предыдущему шагу"/>
+                    <Tooltip text="Вернуться к предыдущему шагу" />
                 </tooltip>
             </Button>
-            <Button text="Зашифровать" fx:id="encryptBtn" onAction="#handleEncrypt"
-                    style="-fx-background-color: #2ecc71; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 10 20;">
-                <tooltip>
-                    <Tooltip text="Создать зашифрованный раздел с выбранными настройками"/>
-                </tooltip>
-            </Button>
+            <Button fx:id="encryptBtn" onAction="#handleEncrypt" style="-fx-background-color: #2ecc71; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 10 20;" text="Создать" />
         </HBox>
+
     </VBox>
 </AnchorPane>

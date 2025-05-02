@@ -73,7 +73,7 @@ public class HelloApplication extends Application {
         createItem.addActionListener(e -> Platform.runLater(this::showCreationWindow));
 
         // Пункт меню "Редактировать разделы"
-        java.awt.MenuItem editItem = new java.awt.MenuItem("Редактировать разделы");
+        java.awt.MenuItem editItem = new java.awt.MenuItem("Управление разделами");
         editItem.addActionListener(e -> Platform.runLater(this::showManagementWindow));
 
         java.awt.MenuItem automationItem = new java.awt.MenuItem("Автоматизация и резервное копирование");

@@ -11,10 +11,16 @@ import java.io.IOException;
 
 public class EncryptionSettingsController {
     @FXML private ComboBox<String> algorithmBox;
-    @FXML private ComboBox<String> fsTypeBox; // Новое поле для выбора файловой системы
-    @FXML private CheckBox usePasswordCheck;
+    @FXML private ComboBox<String> fsTypeBox;
+
     @FXML private PasswordField passwordField;
+    @FXML private TextField passwordVisibleField;
+    @FXML private ToggleButton showPasswordBtn;
+
     @FXML private PasswordField confirmPasswordField;
+    @FXML private TextField confirmPasswordVisibleField;
+    @FXML private ToggleButton showConfirmPasswordBtn;
+
     @FXML private Label passwordLabel;
     @FXML private Label confirmLabel;
     @FXML private Button generatePasswordBtn;
@@ -26,7 +32,7 @@ public class EncryptionSettingsController {
 
     @FXML
     private void initialize() {
-        // Заполняем алгоритмы
+        // Заполнение алгоритмов шифрования
         algorithmBox.getItems().addAll(
                 "AES-256 (XTS)",
                 "Serpent (XTS)",
@@ -36,41 +42,87 @@ public class EncryptionSettingsController {
         );
         algorithmBox.getSelectionModel().selectFirst();
 
-        // Заполняем типы файловых систем
-        fsTypeBox.getItems().addAll("ext4", "fat32", "ntfs"); // Добавлены поддерживаемые файловые системы
+        // Заполнение типов файловых систем
+        fsTypeBox.getItems().addAll("ext4", "fat32", "ntfs");
         fsTypeBox.getSelectionModel().selectFirst();
 
-        // Привязка видимости элементов к чекбоксу
-        usePasswordCheck.selectedProperty().addListener((obs, oldVal, newVal) -> {
-            boolean visible = newVal != null && newVal;
-            passwordLabel.setVisible(visible);
-            passwordField.setVisible(visible);
-            confirmLabel.setVisible(visible);
-            confirmPasswordField.setVisible(visible);
-            generatePasswordBtn.setVisible(visible);
+        // Связываем managed с visible для корректного layout
+        passwordVisibleField.managedProperty().bind(passwordVisibleField.visibleProperty());
+        confirmPasswordVisibleField.managedProperty().bind(confirmPasswordVisibleField.visibleProperty());
+
+        // Управление видимостью полей пароля
+        passwordVisibleField.visibleProperty().bind(showPasswordBtn.selectedProperty());
+        passwordField.visibleProperty().bind(showPasswordBtn.selectedProperty().not());
+
+        confirmPasswordVisibleField.visibleProperty().bind(showConfirmPasswordBtn.selectedProperty());
+        confirmPasswordField.visibleProperty().bind(showConfirmPasswordBtn.selectedProperty().not());
+
+        // Синхронизация текста между полями
+        passwordField.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (!passwordVisibleField.isFocused()) {
+                passwordVisibleField.setText(newVal);
+            }
+            validateFields();
+        });
+        passwordVisibleField.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (!passwordField.isFocused()) {
+                passwordField.setText(newVal);
+            }
             validateFields();
         });
 
-        // Валидация полей
-        passwordField.textProperty().addListener((obs, oldVal, newVal) -> validateFields());
-        confirmPasswordField.textProperty().addListener((obs, oldVal, newVal) -> validateFields());
+        confirmPasswordField.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (!confirmPasswordVisibleField.isFocused()) {
+                confirmPasswordVisibleField.setText(newVal);
+            }
+            validateFields();
+        });
+        confirmPasswordVisibleField.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (!confirmPasswordField.isFocused()) {
+                confirmPasswordField.setText(newVal);
+            }
+            validateFields();
+        });
+
+        // Кнопки переключения текста
+        showPasswordBtn.setOnAction(event -> {
+            if (showPasswordBtn.isSelected()) {
+                showPasswordBtn.setText("Скрыть");
+            } else {
+                showPasswordBtn.setText("Показать");
+            }
+        });
+
+        showConfirmPasswordBtn.setOnAction(event -> {
+            if (showConfirmPasswordBtn.isSelected()) {
+                showConfirmPasswordBtn.setText("Скрыть");
+            } else {
+                showConfirmPasswordBtn.setText("Показать");
+            }
+        });
+
+        // Изначальное состояние кнопок
+        showPasswordBtn.setSelected(false);
+        showPasswordBtn.setText("Показать");
+        showConfirmPasswordBtn.setSelected(false);
+        showConfirmPasswordBtn.setText("Показать");
+
+        validateFields();
     }
 
     private void validateFields() {
-        boolean valid = true;
+        String password = passwordField.isVisible() ? passwordField.getText() : passwordVisibleField.getText();
+        String confirm = confirmPasswordField.isVisible() ? confirmPasswordField.getText() : confirmPasswordVisibleField.getText();
 
-        if (usePasswordCheck.isSelected()) {
-            valid = !passwordField.getText().isEmpty()
-                    && passwordField.getText().equals(confirmPasswordField.getText())
-                    && passwordField.getText().length() >= 8; // Минимальная длина пароля
-        }
+        boolean valid = !password.isEmpty()
+                && password.equals(confirm)
+                && password.length() >= 8;
 
         encryptBtn.setDisable(!valid);
     }
 
     @FXML
     private void handleGeneratePassword() {
-        // Генерация случайного пароля
         String generated = PasswordGenerator.generate(16);
         passwordField.setText(generated);
         confirmPasswordField.setText(generated);
@@ -94,7 +146,9 @@ public class EncryptionSettingsController {
 
     @FXML
     private void handleEncrypt() {
-        // Проверяем входные данные
+        String password = passwordField.isVisible() ? passwordField.getText() : passwordVisibleField.getText();
+        String confirm = confirmPasswordField.isVisible() ? confirmPasswordField.getText() : confirmPasswordVisibleField.getText();
+
         if (containerPath == null || containerPath.isEmpty()) {
             showAlert("Ошибка", "Путь к контейнеру не указан.", Alert.AlertType.ERROR);
             return;
@@ -107,51 +161,43 @@ public class EncryptionSettingsController {
             showAlert("Ошибка", "Имя контейнера не указано.", Alert.AlertType.ERROR);
             return;
         }
-        if (usePasswordCheck.isSelected() && passwordField.getText().isEmpty()) {
+        if (password.isEmpty()) {
             showAlert("Ошибка", "Пароль не может быть пустым.", Alert.AlertType.ERROR);
             return;
         }
+        if (!password.equals(confirm)) {
+            showAlert("Ошибка", "Пароли не совпадают.", Alert.AlertType.ERROR);
+            return;
+        }
 
-        // Логика шифрования
         String algorithm = algorithmBox.getValue();
-        String fsType = fsTypeBox.getValue(); // Получаем выбранную файловую систему
-        String password = usePasswordCheck.isSelected() ? passwordField.getText() : null;
+        String fsType = fsTypeBox.getValue();
 
         try {
-            // Вызов метода создания контейнера
             EncryptionManager.createContainer(
                     containerPath,
                     containerSize,
                     containerName,
                     algorithm,
                     password,
-                    fsType // Передаем тип файловой системы
+                    fsType
             );
 
-            // Уведомление об успешном создании контейнера
             showAlert("Успех", "Контейнер успешно создан и отформатирован.", Alert.AlertType.INFORMATION);
 
-            // Закрываем окно после успешного создания
             Stage stage = (Stage) encryptBtn.getScene().getWindow();
             stage.close();
         } catch (Exception e) {
-            // Обработка ошибок
             showAlert("Ошибка", "Не удалось создать контейнер: " + e.getMessage(), Alert.AlertType.ERROR);
         }
     }
 
-    /**
-     * Устанавливает данные контейнера.
-     */
     public void setContainerData(String path, int size, String name) {
         this.containerPath = path;
         this.containerSize = size;
         this.containerName = name;
     }
 
-    /**
-     * Показывает диалоговое окно с сообщением.
-     */
     private void showAlert(String title, String message, Alert.AlertType type) {
         Alert alert = new Alert(type);
         alert.setTitle(title);

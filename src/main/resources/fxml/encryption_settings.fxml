@@ -16,6 +16,7 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
+<?import javafx.scene.control.ProgressIndicator?>
 <AnchorPane prefHeight="500.0" prefWidth="700.0" style="-fx-background-color: #f5f5f5;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.crypt.EncryptionSettingsController">
     <VBox alignment="TOP_CENTER" prefWidth="650" spacing="25" style="-fx-background-color: white; -fx-background-radius: 10; -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 10, 0, 0, 3);" AnchorPane.leftAnchor="25" AnchorPane.rightAnchor="25" AnchorPane.topAnchor="20">
 
@@ -84,6 +85,7 @@
                 </tooltip>
             </Button>
             <Button fx:id="encryptBtn" onAction="#handleEncrypt" style="-fx-background-color: #2ecc71; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 10 20;" text="Создать" />
+            <ProgressIndicator fx:id="progressIndicator" visible="false" maxWidth="30" maxHeight="30"/>
         </HBox>
 
     </VBox>

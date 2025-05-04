@@ -1,5 +1,6 @@
 package com.example.crypt;
 
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -8,6 +9,10 @@ import javafx.scene.control.*;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.security.Provider;
+import java.security.Security;
+import java.util.Set;
+import java.util.TreeSet;
 
 public class EncryptionSettingsController {
     @FXML private ComboBox<String> algorithmBox;
@@ -20,6 +25,8 @@ public class EncryptionSettingsController {
     @FXML private PasswordField confirmPasswordField;
     @FXML private TextField confirmPasswordVisibleField;
     @FXML private ToggleButton showConfirmPasswordBtn;
+    @FXML private ProgressIndicator progressIndicator;
+
 
     @FXML private Label passwordLabel;
     @FXML private Label confirmLabel;
@@ -33,17 +40,12 @@ public class EncryptionSettingsController {
     @FXML
     private void initialize() {
         // Заполнение алгоритмов шифрования
-        algorithmBox.getItems().addAll(
-                "AES-256 (XTS)",
-                "Serpent (XTS)",
-                "Twofish (XTS)",
-                "AES-Twofish (XTS)",
-                "AES-Twofish-Serpent (XTS)"
-        );
+        // Получаем список поддерживаемых алгоритмов
+        algorithmBox.getItems().addAll(CRYPTSETUP_CIPHERS);
         algorithmBox.getSelectionModel().selectFirst();
 
         // Заполнение типов файловых систем
-        fsTypeBox.getItems().addAll("ext4", "fat32", "ntfs");
+        fsTypeBox.getItems().addAll("ext4");
         fsTypeBox.getSelectionModel().selectFirst();
 
         // Связываем managed с visible для корректного layout
@@ -110,6 +112,16 @@ public class EncryptionSettingsController {
         validateFields();
     }
 
+    private static final String[] CRYPTSETUP_CIPHERS = {
+            "aes-cbc",
+            "serpent-cbc",
+            "twofish-cbc",
+            "aes-xts",
+            "serpent-xts",
+            "twofish-xts"
+    };
+
+
     private void validateFields() {
         String password = passwordField.isVisible() ? passwordField.getText() : passwordVisibleField.getText();
         String confirm = confirmPasswordField.isVisible() ? confirmPasswordField.getText() : confirmPasswordVisibleField.getText();
@@ -173,23 +185,47 @@ public class EncryptionSettingsController {
         String algorithm = algorithmBox.getValue();
         String fsType = fsTypeBox.getValue();
 
-        try {
-            EncryptionManager.createContainer(
-                    containerPath,
-                    containerSize,
-                    containerName,
-                    algorithm,
-                    password,
-                    fsType
-            );
+        // Показываем индикатор и блокируем кнопки
+        progressIndicator.setVisible(true);
+        encryptBtn.setDisable(true);
+        generatePasswordBtn.setDisable(true);
+
+        Task<Void> task = new Task<>() {
+            @Override
+            protected Void call() throws Exception {
+                EncryptionManager.createContainer(
+                        containerPath,
+                        containerSize,
+                        containerName,
+                        algorithm,
+                        password,
+                        fsType
+                );
+                return null;
+            }
+        };
+
+        task.setOnSucceeded(event -> {
+            progressIndicator.setVisible(false);
+            encryptBtn.setDisable(false);
+            generatePasswordBtn.setDisable(false);
 
             showAlert("Успех", "Контейнер успешно создан и отформатирован.", Alert.AlertType.INFORMATION);
 
             Stage stage = (Stage) encryptBtn.getScene().getWindow();
             stage.close();
-        } catch (Exception e) {
-            showAlert("Ошибка", "Не удалось создать контейнер: " + e.getMessage(), Alert.AlertType.ERROR);
-        }
+        });
+
+        task.setOnFailed(event -> {
+            progressIndicator.setVisible(false);
+            encryptBtn.setDisable(false);
+            generatePasswordBtn.setDisable(false);
+
+            Throwable e = task.getException();
+            showAlert("Ошибка", "Не удалось создать контейнер: " + (e != null ? e.getMessage() : "Неизвестная ошибка"), Alert.AlertType.ERROR);
+        });
+
+        new Thread(task).start();
     }
 
     public void setContainerData(String path, int size, String name) {
@@ -204,5 +240,23 @@ public class EncryptionSettingsController {
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
+    }
+
+    public static Set<String> getAvailableCiphers() {
+        Set<String> algorithms = new TreeSet<>();
+        for (Provider provider : Security.getProviders()) {
+            for (Object keyObj : provider.keySet()) {
+                String key = keyObj.toString();
+                if (key.startsWith("Cipher.")) {
+                    String algorithm = key.substring("Cipher.".length());
+                    int spaceIndex = algorithm.indexOf(' ');
+                    if (spaceIndex > 0) {
+                        algorithm = algorithm.substring(0, spaceIndex);
+                    }
+                    algorithms.add(algorithm);
+                }
+            }
+        }
+        return algorithms;
     }
 }

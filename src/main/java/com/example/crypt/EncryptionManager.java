@@ -369,7 +369,7 @@ public class EncryptionManager {
 
     public static ObservableList<Partition> getContainersList() {
         ObservableList<Partition> containers = FXCollections.observableArrayList();
-        String containersDir = "/home/maksimka/containers"; // Используйте правильный путь
+        String containersDir = "/home/maksim/containers"; // Используйте правильный путь
         File containerDir = new File(containersDir);
 
         if (!containerDir.exists()) {

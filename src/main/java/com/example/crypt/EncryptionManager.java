@@ -88,7 +88,7 @@ public class EncryptionManager {
                         cd,
                         "LUKS2",
                         "aes",
-                        algorithm,
+                        "xts-plain64",
                         null,
                         null,
                         64,
@@ -228,7 +228,7 @@ public class EncryptionManager {
             File device = new File("/dev/mapper/" + mappedName);
 
             if (device.exists()) {
-                System.out.println("Устройство уже существует. Деактивируем...");
+                System.out.println("Устройство уже активировано. Деактивируем...");
                 int deactivateResult = crypt.crypt_deactivate(cd, mappedName);
                 if (deactivateResult < 0) {
                     throw new IOException("Ошибка при деактивации существующего устройства: " + mappedName);
@@ -345,6 +345,11 @@ public class EncryptionManager {
             if (result < 0) {
                 throw new IOException("Ошибка при деактивации контейнера: " + result);
             }
+
+            // 3. Отключение loop-устройства
+            detachLoopDevices(name);
+
+            System.out.println("Контейнер успешно размонтирован");
 
         } catch (InterruptedException e) {
             throw new IOException("Процесс был прерван", e);

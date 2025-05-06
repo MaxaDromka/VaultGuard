@@ -185,7 +185,7 @@ public class EncryptionManager {
     }
 
     private static void detachLoopDevices(String containerPath) throws IOException {
-        Process process = Runtime.getRuntime().exec("losetup -j " + containerPath);
+        Process process = Runtime.getRuntime().exec("sudo losetup -j " + containerPath);
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
             String line;
             while ((line = reader.readLine()) != null) {

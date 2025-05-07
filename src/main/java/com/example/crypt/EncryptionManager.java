@@ -16,8 +16,35 @@ public class EncryptionManager {
         try {
             System.loadLibrary("cryptsetup");
         } catch (UnsatisfiedLinkError e) {
-            System.err.println("Ошибка: cryptsetup-devel не найдена. Установите её с помощью 'sudo dnf install cryptsetup-devel'");
+            System.err.println("Ошибка: cryptsetup-devel не найдена. Установите её с помощью 'pkexec dnf install cryptsetup-devel'");
             System.exit(1);
+        }
+    }
+
+    private static void executeWithPolkit(String command) throws IOException {
+        ProcessBuilder pb = new ProcessBuilder(
+            "pkexec",
+            "sh",
+            "-c",
+            command
+        );
+        
+        Process process = pb.start();
+        try {
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                // Читаем вывод ошибки
+                try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+                    String errorLine;
+                    StringBuilder errorMessage = new StringBuilder();
+                    while ((errorLine = errorReader.readLine()) != null) {
+                        errorMessage.append(errorLine).append("\n");
+                    }
+                    throw new IOException("Команда завершилась с ошибкой: " + exitCode + "\n" + errorMessage.toString());
+                }
+            }
+        } catch (InterruptedException e) {
+            throw new IOException("Процесс был прерван", e);
         }
     }
 
@@ -48,12 +75,7 @@ public class EncryptionManager {
 
             // 2. Создание файла-контейнера
             logger.info("Создание файла-контейнера размером " + sizeMB + "MB");
-            Process truncate = Runtime.getRuntime().exec(
-                    String.format("sudo truncate -s %dM %s", sizeMB, containerPath)
-            );
-            if (!truncate.waitFor(30, TimeUnit.SECONDS) || truncate.exitValue() != 0) {
-                throw new IOException("Ошибка при создании файла контейнера");
-            }
+            executeWithPolkit("/usr/bin/truncate -s " + sizeMB + "M " + containerPath);
 
             // 3. Отключаем существующие loop-устройства
             detachLoopDevices(containerPath);
@@ -61,7 +83,7 @@ public class EncryptionManager {
             // 4. Создание loop-устройства
             logger.info("Создание loop-устройства");
             Process losetup = Runtime.getRuntime().exec(
-                    String.format("sudo losetup -f --show %s", containerPath)
+                    "pkexec /usr/sbin/losetup -f --show " + containerPath
             );
             loopDevice = readProcessOutput(losetup);
             if (loopDevice == null || loopDevice.isEmpty()) {
@@ -161,7 +183,7 @@ public class EncryptionManager {
         } finally {
             if (loopDevice != null) {
                 try {
-                    Runtime.getRuntime().exec(String.format("sudo losetup -d %s", loopDevice)).waitFor();
+                    executeWithPolkit("/usr/sbin/losetup -d " + loopDevice);
                 } catch (Exception e) {
                     logger.warning("Ошибка при отсоединении loop-устройства: " + e.getMessage());
                 }
@@ -185,21 +207,16 @@ public class EncryptionManager {
     }
 
     private static void detachLoopDevices(String containerPath) throws IOException {
-        Process process = Runtime.getRuntime().exec("sudo losetup -j " + containerPath);
+        Process process = Runtime.getRuntime().exec("pkexec /usr/sbin/losetup -j " + containerPath);
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 if (line.contains(containerPath)) {
                     String loopDevice = line.split(":")[0].trim();
                     logger.info("Отключение loop-устройства: " + loopDevice);
-                    Process detach = Runtime.getRuntime().exec("sudo losetup -d " + loopDevice);
-                    if (!detach.waitFor(30, TimeUnit.SECONDS) || detach.exitValue() != 0) {
-                        throw new IOException("Ошибка при отключении loop-устройства: " + loopDevice);
-                    }
+                    executeWithPolkit("/usr/sbin/losetup -d " + loopDevice);
                 }
             }
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -304,20 +321,13 @@ public class EncryptionManager {
             while ((line = reader.readLine()) != null) {
                 if (line.contains(devicePath)) {
                     System.out.println("Устройство уже смонтировано: " + devicePath);
-                    return; // Пропускаем регистрацию через udisksctl
+                    return;
                 }
             }
         }
 
         // Если устройство не смонтировано, регистрируем через udisksctl
-        Process udisksctl = Runtime.getRuntime().exec(String.format("sudo udisksctl mount -b %s", devicePath));
-        try {
-            if (!udisksctl.waitFor(30, TimeUnit.SECONDS) || udisksctl.exitValue() != 0) {
-                throw new IOException("Ошибка при регистрации устройства через udisksctl");
-            }
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        executeWithPolkit("/usr/bin/udisksctl mount -b " + devicePath);
     }
 
     /**
@@ -326,34 +336,27 @@ public class EncryptionManager {
     public static void unmountContainer(String name, String mountPoint) throws IOException {
         String mappedName = "crypt_" + name;
 
-        try {
-            // 1. Размонтирование файловой системы
-            Process umount = Runtime.getRuntime().exec(String.format("sudo umount %s", mountPoint));
-            if (!umount.waitFor(30, TimeUnit.SECONDS) || umount.exitValue() != 0) {
-                throw new IOException("Ошибка при размонтировании файловой системы");
-            }
+        // 1. Размонтирование файловой системы
+        executeWithPolkit("/usr/bin/umount " + mountPoint);
 
-            // 2. Закрытие зашифрованного контейнера
-            PointerByReference cdRef = new PointerByReference();
-            Pointer cd = null;
-            int result = crypt.crypt_init_by_name(cdRef, mappedName);
-            if (result < 0) {
-                throw new IOException("Ошибка при инициализации: " + result);
-            }
-            cd = cdRef.getValue();
-            result = crypt.crypt_deactivate(cd, mappedName);
-            if (result < 0) {
-                throw new IOException("Ошибка при деактивации контейнера: " + result);
-            }
-
-            // 3. Отключение loop-устройства
-            detachLoopDevices(name);
-
-            System.out.println("Контейнер успешно размонтирован");
-
-        } catch (InterruptedException e) {
-            throw new IOException("Процесс был прерван", e);
+        // 2. Закрытие зашифрованного контейнера
+        PointerByReference cdRef = new PointerByReference();
+        Pointer cd = null;
+        int result = crypt.crypt_init_by_name(cdRef, mappedName);
+        if (result < 0) {
+            throw new IOException("Ошибка при инициализации: " + result);
         }
+        cd = cdRef.getValue();
+        result = crypt.crypt_deactivate(cd, mappedName);
+        if (result < 0) {
+            throw new IOException("Ошибка при деактивации контейнера: " + result);
+        }
+
+        // 3. Отключение loop-устройства
+        detachLoopDevices(name);
+
+        System.out.println("Контейнер успешно размонтирован");
+
     }
 
     private static String readProcessOutput(Process process) throws IOException {

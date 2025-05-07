@@ -32,9 +32,10 @@ public class HelloApplication extends Application {
     public static void main(String[] args) {
         try {
             System.out.println("Начало программы...");
-            String userName = args.length > 0 ? args[0] : System.getProperty("user.name");
+            // Получаем имя текущего пользователя
+            String userName = System.getProperty("user.name");
             System.out.println("Имя пользователя: " + userName);
-            String homeDir = "/home/" + userName;
+            String homeDir = System.getProperty("user.home");
             System.out.println("Домашняя директория: " + homeDir);
 
             // Вызов остальной логики программы

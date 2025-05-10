@@ -88,7 +88,7 @@ public class EncryptionManager {
                         cd,
                         "LUKS2",
                         "aes",
-                        algorithm,
+                        "xts-plain64",
                         null,
                         null,
                         64,

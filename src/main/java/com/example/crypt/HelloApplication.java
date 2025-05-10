@@ -96,14 +96,12 @@ public class HelloApplication extends Application {
         java.awt.MenuItem gpgItem = new java.awt.MenuItem("Шифрование отдельных файлов");
         gpgItem.addActionListener(e -> Platform.runLater(this::showGPGWindow));
 
-        // Пункт меню "Редактировать разделы
-        //        java.awt.MenuItem helpItem = new .ad"
-        //java.awt.MenuItem backupItem = new java.awt.MenuItem("Бэкап");
-        //backupItem.addActionListener(e -> Platform.runLater(this::showManagementWindow));
+        // Добавляем пункт меню для статистики
+        java.awt.MenuItem statsItem = new java.awt.MenuItem("Статистика контейнеров");
+        statsItem.addActionListener(e -> Platform.runLater(() -> com.example.crypt.gui.StatisticsWindow.show()));
 
         java.awt.MenuItem helpItem = new java.awt.MenuItem("Справка");
         helpItem.addActionListener(e -> Platform.runLater(this::showHelpWindow));
-
 
         // Пункт меню "Выход"
         java.awt.MenuItem exitItem = new java.awt.MenuItem("Выход");
@@ -116,8 +114,8 @@ public class HelloApplication extends Application {
         popup.add(createItem);
         popup.add(editItem); // Добавляем кнопку редактирования
         popup.add(automationItem);
-        //popup.add(backupItem);
         popup.add(gpgItem);
+        popup.add(statsItem); // Добавляем пункт статистики
         popup.addSeparator();
         popup.add(helpItem);
         popup.add(exitItem);

@@ -17,7 +17,7 @@ public class ContainerMonitor {
         private long totalSize;
         private long usedSpace;
         private long lastAccessTime;
-        private int accessCount;
+        public int accessCount;
         private List<String> recentActivities;
         
         public ContainerStats(long totalSize) {

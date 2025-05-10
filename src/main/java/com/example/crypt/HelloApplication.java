@@ -30,7 +30,20 @@ public class HelloApplication extends Application {
     private Preferences prefs;
 
     public static void main(String[] args) {
-        launch(args);
+        try {
+            System.out.println("Начало программы...");
+            // Получаем имя текущего пользователя
+            String userName = System.getProperty("user.name");
+            System.out.println("Имя пользователя: " + userName);
+            String homeDir = System.getProperty("user.home");
+            System.out.println("Домашняя директория: " + homeDir);
+
+            // Вызов остальной логики программы
+            launch(args);
+        } catch (Exception e) {
+            System.err.println("Ошибка при запуске программы: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     @Override

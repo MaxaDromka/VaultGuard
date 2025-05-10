@@ -449,4 +449,78 @@ public class EncryptionManager {
             }
         }
     }
+
+    /**
+     * Изменяет размер существующего контейнера.
+     */
+    public static void resizeContainer(String containerPath, int newSizeMB) throws IOException {
+        LogManager.logInfo("Начало изменения размера контейнера: " + containerPath);
+        
+        // 1. Проверяем существование контейнера
+        File containerFile = new File(containerPath);
+        if (!containerFile.exists()) {
+            throw new IOException("Контейнер не найден: " + containerPath);
+        }
+        
+        // 2. Получаем текущий размер
+        long currentSize = containerFile.length() / (1024 * 1024); // Размер в МБ
+        if (newSizeMB <= currentSize) {
+            throw new IOException("Новый размер должен быть больше текущего");
+        }
+        
+        // 3. Размонтируем контейнер, если он смонтирован
+        String containerName = containerFile.getName().replaceFirst("^\\.", "");
+        String mountPoint = "/mnt/" + containerName;
+        try {
+            unmountContainer(containerName, mountPoint);
+        } catch (IOException e) {
+            LogManager.logWarning("Контейнер не был размонтирован: " + e.getMessage());
+        }
+        
+        // 4. Изменяем размер файла
+        LogManager.logInfo("Изменение размера файла контейнера");
+        executeWithPolkit("/usr/bin/truncate -s " + newSizeMB + "M " + containerPath);
+        
+        // 5. Расширяем файловую систему
+        String mappedName = "crypt_" + containerName;
+        String devicePath = "/dev/mapper/" + mappedName;
+        
+        // Активируем контейнер
+        PointerByReference cdRef = new PointerByReference();
+        Pointer cd = null;
+        try {
+            int result = crypt.crypt_init(cdRef, containerPath);
+            if (result < 0) {
+                throw new IOException("Ошибка при инициализации cryptsetup: " + result);
+            }
+            cd = cdRef.getValue();
+            
+            result = crypt.crypt_activate_by_passphrase(
+                cd,
+                mappedName,
+                -1,
+                "password", // Здесь нужно запросить пароль у пользователя
+                "password".length(),
+                0
+            );
+            if (result < 0) {
+                throw new IOException("Ошибка при активации контейнера: " + result);
+            }
+            
+            // Расширяем файловую систему
+            LogManager.logInfo("Расширение файловой системы");
+            Process resize = Runtime.getRuntime().exec(String.format("sudo resize2fs %s", devicePath));
+            if (!resize.waitFor(30, TimeUnit.SECONDS) || resize.exitValue() != 0) {
+                throw new IOException("Ошибка при расширении файловой системы");
+            }
+            
+            LogManager.logInfo("Размер контейнера успешно изменен");
+        } catch (InterruptedException e) {
+            throw new IOException("Процесс был прерван", e);
+        } finally {
+            if (cd != null) {
+                crypt.crypt_free(cd);
+            }
+        }
+    }
 }

@@ -1,7 +1,5 @@
 package com.example.crypt;
 
-import javafx.collections.ObservableList;
-
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,7 +15,7 @@ public class ContainerMonitor {
         private long totalSize;
         private long usedSpace;
         private long lastAccessTime;
-        public int accessCount;
+        private int accessCount;
         private List<String> recentActivities;
         
         public ContainerStats(long totalSize) {
@@ -44,6 +42,13 @@ public class ContainerMonitor {
         public double getUsagePercentage() {
             return (double) usedSpace / totalSize * 100;
         }
+        
+        // Геттеры
+        public long getTotalSize() { return totalSize; }
+        public long getUsedSpace() { return usedSpace; }
+        public long getLastAccessTime() { return lastAccessTime; }
+        public int getAccessCount() { return accessCount; }
+        public List<String> getRecentActivities() { return Collections.unmodifiableList(recentActivities); }
     }
     
     public static void startMonitoring() {
@@ -57,30 +62,44 @@ public class ContainerMonitor {
     }
     
     private static void updateContainerStats() {
-        ObservableList<Partition> containers = EncryptionManager.getContainersList();
-        for (Partition container : containers) {
-            String containerPath = container.getPath();
+        for (Map.Entry<String, ContainerStats> entry : containerStats.entrySet()) {
+            String containerPath = entry.getKey();
             File containerFile = new File(containerPath);
             
-            if (!containerStats.containsKey(containerPath)) {
-                containerStats.put(containerPath, new ContainerStats(containerFile.length()));
+            if (containerFile.exists()) {
+                ContainerStats stats = entry.getValue();
+                stats.updateStats(containerFile.length());
+                
+                // Логируем статистику
+                LogManager.logInfo(String.format(
+                    "Контейнер: %s, Использовано: %.2f%%, Последний доступ: %s",
+                    containerFile.getName(),
+                    stats.getUsagePercentage(),
+                    new Date(stats.getLastAccessTime())
+                ));
             }
-            
-            ContainerStats stats = containerStats.get(containerPath);
-            stats.updateStats(containerFile.length());
-            
-            // Логируем статистику
-            LogManager.logInfo(String.format(
-                "Контейнер: %s, Использовано: %.2f%%, Последний доступ: %s",
-                container.getName(),
-                stats.getUsagePercentage(),
-                new Date(stats.lastAccessTime)
-            ));
         }
+    }
+    
+    public static void addContainer(String containerPath) {
+        File containerFile = new File(containerPath);
+        if (containerFile.exists()) {
+            containerStats.put(containerPath, new ContainerStats(containerFile.length()));
+            LogManager.logInfo("Добавлен контейнер для мониторинга: " + containerPath);
+        }
+    }
+    
+    public static void removeContainer(String containerPath) {
+        containerStats.remove(containerPath);
+        LogManager.logInfo("Удален контейнер из мониторинга: " + containerPath);
     }
     
     public static ContainerStats getContainerStats(String containerPath) {
         return containerStats.get(containerPath);
+    }
+    
+    public static Map<String, ContainerStats> getAllContainerStats() {
+        return Collections.unmodifiableMap(containerStats);
     }
     
     public static void stopMonitoring() {

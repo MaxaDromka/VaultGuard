@@ -96,14 +96,8 @@ public class HelloApplication extends Application {
         java.awt.MenuItem gpgItem = new java.awt.MenuItem("Шифрование отдельных файлов");
         gpgItem.addActionListener(e -> Platform.runLater(this::showGPGWindow));
 
-        // Пункт меню "Редактировать разделы
-        //        java.awt.MenuItem helpItem = new .ad"
-        //java.awt.MenuItem backupItem = new java.awt.MenuItem("Бэкап");
-        //backupItem.addActionListener(e -> Platform.runLater(this::showManagementWindow));
-
         java.awt.MenuItem helpItem = new java.awt.MenuItem("Справка");
         helpItem.addActionListener(e -> Platform.runLater(this::showHelpWindow));
-
 
         // Пункт меню "Выход"
         java.awt.MenuItem exitItem = new java.awt.MenuItem("Выход");
@@ -114,9 +108,8 @@ public class HelloApplication extends Application {
         });
 
         popup.add(createItem);
-        popup.add(editItem); // Добавляем кнопку редактирования
+        popup.add(editItem);
         popup.add(automationItem);
-        //popup.add(backupItem);
         popup.add(gpgItem);
         popup.addSeparator();
         popup.add(helpItem);

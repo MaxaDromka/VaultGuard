@@ -1,0 +1,8 @@
+# Устанавливаем права для loop-устройств
+KERNEL=="loop[0-9]*", GROUP="disk", MODE="0660"
+
+# Устанавливаем права для loop-control
+KERNEL=="loop-control", GROUP="disk", MODE="0660"
+
+# Устанавливаем права для mapper устройств
+KERNEL=="dm-[0-9]*", GROUP="disk", MODE="0660" 

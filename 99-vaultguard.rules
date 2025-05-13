@@ -1,0 +1,54 @@
+polkit.addRule(function(action, subject) {
+    polkit.log("action " + action);
+    polkit.log("subject " + subject);
+    
+    // Разрешаем выполнение команд через pkexec
+    if (action.id == "org.freedesktop.policykit.exec") {
+        if (action.lookup("program") == "/usr/bin/sh" &&
+            (action.lookup("command_line").includes("truncate") ||
+             action.lookup("command_line").includes("losetup") ||
+             action.lookup("command_line").includes("cryptsetup") ||
+             action.lookup("command_line").includes("mount") ||
+             action.lookup("command_line").includes("umount"))) {
+            return polkit.Result.YES;
+        }
+    }
+    
+    // Разрешаем выполнение прямых команд
+    if (action.id == "com.example.crypt.manage-containers" ||
+        action.id == "com.example.crypt.truncate" ||
+        action.id == "com.example.crypt.losetup" ||
+        action.id == "com.example.crypt.mount" ||
+        action.id == "com.example.crypt.umount") {
+        return polkit.Result.YES;
+    }
+    
+    // Разрешаем все операции с cryptsetup
+    if (action.id.startsWith("org.freedesktop.udisks2.encrypted") ||
+        action.id.startsWith("org.freedesktop.udisks2.loop") ||
+        action.id.startsWith("org.freedesktop.udisks2.filesystem") ||
+        action.id.startsWith("org.freedesktop.udisks2.device")) {
+        return polkit.Result.YES;
+    }
+    
+    // Разрешаем доступ к устройствам
+    if (action.id == "org.freedesktop.udisks2.device" ||
+        action.id == "org.freedesktop.udisks2.device-system" ||
+        action.id == "org.freedesktop.udisks2.device-other-seat") {
+        return polkit.Result.YES;
+    }
+    
+    // Разрешаем доступ к устройствам через cryptsetup
+    if (action.id == "org.freedesktop.udisks2.encrypted-unlock" ||
+        action.id == "org.freedesktop.udisks2.encrypted-lock" ||
+        action.id == "org.freedesktop.udisks2.encrypted-change-passphrase" ||
+        action.id == "org.freedesktop.udisks2.encrypted-modify") {
+        return polkit.Result.YES;
+    }
+    
+    // Разрешаем доступ к устройствам через losetup
+    if (action.id == "org.freedesktop.udisks2.loop-setup" ||
+        action.id == "org.freedesktop.udisks2.loop-delete") {
+        return polkit.Result.YES;
+    }
+}); 

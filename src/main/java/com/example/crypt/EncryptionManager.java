@@ -83,7 +83,7 @@ public class EncryptionManager {
             // 4. Создание loop-устройства
             logger.info("Создание loop-устройства");
             Process losetup = Runtime.getRuntime().exec(
-                    "pkexec /usr/sbin/losetup -f --show " + containerPath
+                    "/usr/sbin/losetup -f --show " + containerPath
             );
             loopDevice = readProcessOutput(losetup);
             if (loopDevice == null || loopDevice.isEmpty()) {
@@ -158,7 +158,7 @@ public class EncryptionManager {
                 throw new IOException("Ошибка при создании файловой системы");
             }
 
-            // 10. Настройка автоматического монтирования через /etc/fstab
+            /*// 10. Настройка автоматического монтирования через /etc/fstab
             logger.info("Настройка автоматического монтирования через /etc/fstab");
             String mountPoint = "/mnt/" + name;
             String uuid = getUUID(devicePath);
@@ -167,15 +167,15 @@ public class EncryptionManager {
                     uuid,
                     mountPoint,
                     fsType
-            );
+            );*/
 
-            // Добавляем запись в /etc/fstab
+            /*// Добавляем запись в /etc/fstab
             Process appendFstab = Runtime.getRuntime().exec(
                     String.format("echo '%s' | sudo tee -a /etc/fstab", fstabEntry)
             );
             if (!appendFstab.waitFor(30, TimeUnit.SECONDS) || appendFstab.exitValue() != 0) {
                 throw new IOException("Ошибка при добавлении записи в /etc/fstab");
-            }
+            }*/
 
             logger.info("Контейнер успешно создан и настроен для автоматического монтирования");
         } catch (InterruptedException e) {
@@ -377,7 +377,7 @@ public class EncryptionManager {
 
     public static ObservableList<Partition> getContainersList() {
         ObservableList<Partition> containers = FXCollections.observableArrayList();
-        String containersDir = "/home/maksim/containers"; // Используйте правильный путь
+        String containersDir = "/home/maksimka/containers"; // Используйте правильный путь
         File containerDir = new File(containersDir);
 
         if (!containerDir.exists()) {

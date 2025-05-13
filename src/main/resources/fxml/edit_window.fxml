@@ -63,7 +63,7 @@
                 <!-- Столбец "Автозапуск" -->
                 <TableColumn prefWidth="100" style="-fx-alignment: CENTER;" text="Автозапуск">
                     <cellValueFactory>
-                        <PropertyValueFactory property="autoMount" />
+                        <PropertyValueFactory property="autoMountCheckBox" />
                     </cellValueFactory>
                 </TableColumn>
 

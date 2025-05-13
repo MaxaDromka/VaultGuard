@@ -83,7 +83,7 @@ public class EncryptionManager {
             // 4. Создание loop-устройства
             logger.info("Создание loop-устройства");
             Process losetup = Runtime.getRuntime().exec(
-                    "/usr/sbin/losetup -f --show " + containerPath
+                    "pkexec /usr/sbin/losetup -f --show " + containerPath
             );
             loopDevice = readProcessOutput(losetup);
             if (loopDevice == null || loopDevice.isEmpty()) {
@@ -389,6 +389,7 @@ public class EncryptionManager {
             File[] files = containerDir.listFiles((dir, name) ->
                     name.startsWith(".") && !name.equals(".") && !name.equals("..")
             );
+            
             if (files != null) {
                 for (File file : files) {
                     System.out.println("Найден файл: " + file.getName());
@@ -447,6 +448,39 @@ public class EncryptionManager {
             if (cd != null) {
                 crypt.crypt_free(cd);
             }
+        }
+    }
+
+    /**
+     * Настраивает автозапуск контейнера
+     */
+    public static void setAutoMount(String containerPath, String name, boolean enable) throws IOException {
+        String mountPoint = "/mnt/" + name;
+        String devicePath = "/dev/mapper/crypt_" + name;
+        
+        if (enable) {
+            // Получаем UUID устройства
+            String uuid = getUUID(devicePath);
+            
+            // Создаем запись для /etc/fstab
+            String fstabEntry = String.format(
+                "UUID=%s  %s  %s  defaults,nofail  0  2\n",
+                uuid,
+                mountPoint,
+                "ext4" // Предполагаем ext4, можно сделать параметром
+            );
+            
+            // Добавляем запись в /etc/fstab
+            executeWithPolkit(String.format("echo '%s' | sudo tee -a /etc/fstab", fstabEntry));
+            
+            // Создаем точку монтирования если её нет
+            executeWithPolkit("mkdir -p " + mountPoint);
+            
+            logger.info("Автозапуск включен для контейнера: " + containerPath);
+        } else {
+            // Удаляем запись из /etc/fstab
+            executeWithPolkit(String.format("sudo sed -i '/%s/d' /etc/fstab", mountPoint));
+            logger.info("Автозапуск отключен для контейнера: " + containerPath);
         }
     }
 }

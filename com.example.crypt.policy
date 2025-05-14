@@ -3,26 +3,24 @@
  "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
  "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
 <policyconfig>
-  <action id="com.example.crypt.manage-containers">
+  <action id="com.example.crypt.manage">
     <description>Manage encrypted containers</description>
     <message>Authentication is required to manage encrypted containers</message>
     <defaults>
-      <allow_any>yes</allow_any>
-      <allow_inactive>yes</allow_inactive>
-      <allow_active>yes</allow_active>
+      <allow_any>auth_self</allow_any>
+      <allow_inactive>auth_self</allow_inactive>
+      <allow_active>auth_self</allow_active>
     </defaults>
-    <annotate key="org.freedesktop.policykit.exec.path">/usr/sbin/losetup</annotate>
-    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/truncate</annotate>
-    <annotate key="org.freedesktop.policykit.exec.path">/usr/sbin/cryptsetup</annotate>
+    <annotate key="org.freedesktop.policykit.exec.path">/home/maksimka/Diplom/VaultGuard/start.sh</annotate>
   </action>
 
   <action id="com.example.crypt.truncate">
     <description>Create container file</description>
     <message>Authentication is required to create container file</message>
     <defaults>
-      <allow_any>yes</allow_any>
-      <allow_inactive>yes</allow_inactive>
-      <allow_active>yes</allow_active>
+      <allow_any>auth_self</allow_any>
+      <allow_inactive>auth_self</allow_inactive>
+      <allow_active>auth_self</allow_active>
     </defaults>
     <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/truncate</annotate>
   </action>
@@ -31,9 +29,9 @@
     <description>Manage loop devices</description>
     <message>Authentication is required to manage loop devices</message>
     <defaults>
-      <allow_any>yes</allow_any>
-      <allow_inactive>yes</allow_inactive>
-      <allow_active>yes</allow_active>
+      <allow_any>auth_self</allow_any>
+      <allow_inactive>auth_self</allow_inactive>
+      <allow_active>auth_self</allow_active>
     </defaults>
     <annotate key="org.freedesktop.policykit.exec.path">/usr/sbin/losetup</annotate>
   </action>
@@ -42,9 +40,9 @@
     <description>Mount devices</description>
     <message>Authentication is required to mount devices</message>
     <defaults>
-      <allow_any>yes</allow_any>
-      <allow_inactive>yes</allow_inactive>
-      <allow_active>yes</allow_active>
+      <allow_any>auth_self</allow_any>
+      <allow_inactive>auth_self</allow_inactive>
+      <allow_active>auth_self</allow_active>
     </defaults>
     <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/mount</annotate>
   </action>
@@ -53,9 +51,9 @@
     <description>Unmount devices</description>
     <message>Authentication is required to unmount devices</message>
     <defaults>
-      <allow_any>yes</allow_any>
-      <allow_inactive>yes</allow_inactive>
-      <allow_active>yes</allow_active>
+      <allow_any>auth_self</allow_any>
+      <allow_inactive>auth_self</allow_inactive>
+      <allow_active>auth_self</allow_active>
     </defaults>
     <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/umount</annotate>
   </action>
@@ -64,9 +62,9 @@
     <description>Manage devices through udisks</description>
     <message>Authentication is required to manage devices</message>
     <defaults>
-      <allow_any>yes</allow_any>
-      <allow_inactive>yes</allow_inactive>
-      <allow_active>yes</allow_active>
+      <allow_any>auth_self</allow_any>
+      <allow_inactive>auth_self</allow_inactive>
+      <allow_active>auth_self</allow_active>
     </defaults>
     <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/udisksctl</annotate>
     <annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate>
@@ -76,9 +74,9 @@
     <description>Manage encrypted devices</description>
     <message>Authentication is required to manage encrypted devices</message>
     <defaults>
-      <allow_any>yes</allow_any>
-      <allow_inactive>yes</allow_inactive>
-      <allow_active>yes</allow_active>
+      <allow_any>auth_self</allow_any>
+      <allow_inactive>auth_self</allow_inactive>
+      <allow_active>auth_self</allow_active>
     </defaults>
     <annotate key="org.freedesktop.policykit.exec.path">/usr/sbin/cryptsetup</annotate>
     <annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate>

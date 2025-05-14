@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 public class EncryptionManager {
     private static final CryptSetup crypt = CryptSetup.load();
     private static final Logger logger = Logger.getLogger(EncryptionManager.class.getName());
+    private static String username;
 
     static {
         try {
@@ -19,6 +20,10 @@ public class EncryptionManager {
             System.err.println("Ошибка: cryptsetup-devel не найдена. Установите её с помощью 'pkexec dnf install cryptsetup-devel'");
             System.exit(1);
         }
+    }
+
+    public static void setUsername(String user) {
+        username = user;
     }
 
     private static void executeWithPolkit(String command) throws IOException {
@@ -377,11 +382,17 @@ public class EncryptionManager {
 
     public static ObservableList<Partition> getContainersList() {
         ObservableList<Partition> containers = FXCollections.observableArrayList();
-        String containersDir = "/home/maksimka/containers"; // Используйте правильный путь
+        
+        if (username == null || username.isEmpty()) {
+            logger.severe("Имя пользователя не установлено. Используйте метод setUsername() перед вызовом getContainersList()");
+            return containers;
+        }
+
+        String containersDir = "/home/" + username + "/containers";
         File containerDir = new File(containersDir);
 
         if (!containerDir.exists()) {
-            System.out.println("Папка не существует: " + containersDir);
+            logger.warning("Папка не существует: " + containersDir);
             return containers;
         }
 
@@ -392,25 +403,25 @@ public class EncryptionManager {
             
             if (files != null) {
                 for (File file : files) {
-                    System.out.println("Найден файл: " + file.getName());
+                    logger.info("Найден файл: " + file.getName());
                     try {
                         String name = file.getName().replaceFirst("^\\.", ""); // Убираем точку из имени
                         long size = file.length() / (1024 * 1024); // Размер в МБ
                         String algorithm = getContainerAlgorithm(file.getAbsolutePath());
-                        System.out.println("Алгоритм для файла " + file.getName() + ": " + algorithm);
+                        logger.info("Алгоритм для файла " + file.getName() + ": " + algorithm);
                         containers.add(new Partition(name, file.getAbsolutePath(), String.valueOf(size), algorithm));
                     } catch (Exception e) {
-                        System.err.println("Ошибка при обработке файла " + file.getName() + ": " + e.getMessage());
+                        logger.severe("Ошибка при обработке файла " + file.getName() + ": " + e.getMessage());
                     }
                 }
             } else {
-                System.out.println("Файлы не найдены");
+                logger.info("Файлы не найдены");
             }
         } else {
-            System.out.println("Папка не является директорией: " + containersDir);
+            logger.warning("Папка не является директорией: " + containersDir);
         }
 
-        System.out.println("Количество найденных контейнеров: " + containers.size());
+        logger.info("Количество найденных контейнеров: " + containers.size());
         return containers;
     }
 

@@ -8,6 +8,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.Button;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextArea;
@@ -28,17 +29,20 @@ import java.util.prefs.Preferences;
 public class HelloApplication extends Application {
     private static final String CONFIG_FILE = "encrypted_sections.ini";
     private Preferences prefs;
+    private static String username;
 
     public static void main(String[] args) {
         try {
             System.out.println("Начало программы...");
-            // Получаем имя текущего пользователя
-            String userName = System.getProperty("user.name");
-            System.out.println("Имя пользователя: " + userName);
-            String homeDir = System.getProperty("user.home");
-            System.out.println("Домашняя директория: " + homeDir);
-
-            // Вызов остальной логики программы
+            if (args.length > 0) {
+                username = args[0];
+                System.out.println("Имя пользователя: " + username);
+                EncryptionManager.setUsername(username);
+            } else {
+                System.err.println("Ошибка: имя пользователя не указано");
+                System.exit(1);
+            }
+            // Запускаем приложение
             launch(args);
         } catch (Exception e) {
             System.err.println("Ошибка при запуске программы: " + e.getMessage());

@@ -84,52 +84,16 @@ public class EncryptionManager {
 
             // 2. Создание файла-контейнера
             logger.info("Создание файла-контейнера размером " + sizeMB + "MB");
-            // Создаем временный файл в домашней директории пользователя
-            String tempContainerPath = "/home/" + username + "/.temp_container";
-            try {
-                // Создаем файл с правами пользователя
-                ProcessBuilder pb = new ProcessBuilder(
-                    "truncate",
-                    "-s",
-                    sizeMB + "M",
-                    tempContainerPath
-                );
-                Process process = pb.start();
-                if (process.waitFor() != 0) {
-                    throw new IOException("Не удалось создать временный файл контейнера");
-                }
-
-                // Перемещаем файл в нужное место с помощью pkexec
-                ProcessBuilder mvPb = new ProcessBuilder(
-                    "pkexec",
-                    "mv",
-                    tempContainerPath,
-                    containerPath
-                );
-                Process mvProcess = mvPb.start();
-                if (mvProcess.waitFor() != 0) {
-                    throw new IOException("Не удалось переместить файл контейнера");
-                }
-            } catch (InterruptedException e) {
-                throw new IOException("Процесс был прерван", e);
-            } finally {
-                // Удаляем временный файл, если он остался
-                new File(tempContainerPath).delete();
-            }
+            executeWithPolkit("/usr/bin/truncate -s " + sizeMB + "M " + containerPath);
 
             // 3. Отключаем существующие loop-устройства
             detachLoopDevices(containerPath);
 
             // 4. Создание loop-устройства
             logger.info("Создание loop-устройства");
-            ProcessBuilder losetupPb = new ProcessBuilder(
-                "pkexec",
-                "/usr/sbin/losetup",
-                "-f",
-                "--show",
-                containerPath
+            Process losetup = Runtime.getRuntime().exec(
+                    "pkexec /usr/sbin/losetup -f --show " + containerPath
             );
-            Process losetup = losetupPb.start();
             loopDevice = readProcessOutput(losetup);
             if (loopDevice == null || loopDevice.isEmpty()) {
                 throw new IOException("Не удалось создать loop-устройство");
@@ -198,30 +162,13 @@ public class EncryptionManager {
             // 9. Создание файловой системы
             logger.info("Создание файловой системы типа " + fsType);
             String devicePath = "/dev/mapper/" + mappedName;
-            ProcessBuilder mkfsPb = new ProcessBuilder(
-                "pkexec",
-                "mkfs." + fsType,
-                devicePath
-            );
-            Process mkfsProcess = mkfsPb.start();
-            if (mkfsProcess.waitFor() != 0) {
-                throw new IOException("Ошибка при создании файловой системы");
-            }
+            executeWithPolkit(String.format("mkfs.%s %s", fsType, devicePath));
 
             logger.info("Контейнер успешно создан и настроен для автоматического монтирования");
-        } catch (InterruptedException e) {
-            throw new IOException("Процесс был прерван", e);
         } finally {
             if (loopDevice != null) {
                 try {
-                    ProcessBuilder detachPb = new ProcessBuilder(
-                        "pkexec",
-                        "/usr/sbin/losetup",
-                        "-d",
-                        loopDevice
-                    );
-                    Process detachProcess = detachPb.start();
-                    detachProcess.waitFor();
+                    executeWithPolkit("/usr/sbin/losetup -d " + loopDevice);
                 } catch (Exception e) {
                     logger.warning("Ошибка при отсоединении loop-устройства: " + e.getMessage());
                 }

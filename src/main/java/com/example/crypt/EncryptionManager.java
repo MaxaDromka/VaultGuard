@@ -26,6 +26,10 @@ public class EncryptionManager {
         username = user;
     }
 
+    public static String getUsername() {
+        return username;
+    }
+
     private static void executeWithPolkit(String command) throws IOException {
         ProcessBuilder pb = new ProcessBuilder(
             "pkexec",
@@ -80,16 +84,52 @@ public class EncryptionManager {
 
             // 2. Создание файла-контейнера
             logger.info("Создание файла-контейнера размером " + sizeMB + "MB");
-            executeWithPolkit("/usr/bin/truncate -s " + sizeMB + "M " + containerPath);
+            // Создаем временный файл в домашней директории пользователя
+            String tempContainerPath = "/home/" + username + "/.temp_container";
+            try {
+                // Создаем файл с правами пользователя
+                ProcessBuilder pb = new ProcessBuilder(
+                    "truncate",
+                    "-s",
+                    sizeMB + "M",
+                    tempContainerPath
+                );
+                Process process = pb.start();
+                if (process.waitFor() != 0) {
+                    throw new IOException("Не удалось создать временный файл контейнера");
+                }
+
+                // Перемещаем файл в нужное место с помощью pkexec
+                ProcessBuilder mvPb = new ProcessBuilder(
+                    "pkexec",
+                    "mv",
+                    tempContainerPath,
+                    containerPath
+                );
+                Process mvProcess = mvPb.start();
+                if (mvProcess.waitFor() != 0) {
+                    throw new IOException("Не удалось переместить файл контейнера");
+                }
+            } catch (InterruptedException e) {
+                throw new IOException("Процесс был прерван", e);
+            } finally {
+                // Удаляем временный файл, если он остался
+                new File(tempContainerPath).delete();
+            }
 
             // 3. Отключаем существующие loop-устройства
             detachLoopDevices(containerPath);
 
             // 4. Создание loop-устройства
             logger.info("Создание loop-устройства");
-            Process losetup = Runtime.getRuntime().exec(
-                    "pkexec /usr/sbin/losetup -f --show " + containerPath
+            ProcessBuilder losetupPb = new ProcessBuilder(
+                "pkexec",
+                "/usr/sbin/losetup",
+                "-f",
+                "--show",
+                containerPath
             );
+            Process losetup = losetupPb.start();
             loopDevice = readProcessOutput(losetup);
             if (loopDevice == null || loopDevice.isEmpty()) {
                 throw new IOException("Не удалось создать loop-устройство");
@@ -158,29 +198,15 @@ public class EncryptionManager {
             // 9. Создание файловой системы
             logger.info("Создание файловой системы типа " + fsType);
             String devicePath = "/dev/mapper/" + mappedName;
-            Process mkfs = Runtime.getRuntime().exec(String.format("sudo mkfs.%s %s", fsType, devicePath));
-            if (!mkfs.waitFor(30, TimeUnit.SECONDS) || mkfs.exitValue() != 0) {
+            ProcessBuilder mkfsPb = new ProcessBuilder(
+                "pkexec",
+                "mkfs." + fsType,
+                devicePath
+            );
+            Process mkfsProcess = mkfsPb.start();
+            if (mkfsProcess.waitFor() != 0) {
                 throw new IOException("Ошибка при создании файловой системы");
             }
-
-            /*// 10. Настройка автоматического монтирования через /etc/fstab
-            logger.info("Настройка автоматического монтирования через /etc/fstab");
-            String mountPoint = "/mnt/" + name;
-            String uuid = getUUID(devicePath);
-            String fstabEntry = String.format(
-                    "UUID=%s  %s  %s  defaults,nofail  0  2\n",
-                    uuid,
-                    mountPoint,
-                    fsType
-            );*/
-
-            /*// Добавляем запись в /etc/fstab
-            Process appendFstab = Runtime.getRuntime().exec(
-                    String.format("echo '%s' | sudo tee -a /etc/fstab", fstabEntry)
-            );
-            if (!appendFstab.waitFor(30, TimeUnit.SECONDS) || appendFstab.exitValue() != 0) {
-                throw new IOException("Ошибка при добавлении записи в /etc/fstab");
-            }*/
 
             logger.info("Контейнер успешно создан и настроен для автоматического монтирования");
         } catch (InterruptedException e) {
@@ -188,7 +214,14 @@ public class EncryptionManager {
         } finally {
             if (loopDevice != null) {
                 try {
-                    executeWithPolkit("/usr/sbin/losetup -d " + loopDevice);
+                    ProcessBuilder detachPb = new ProcessBuilder(
+                        "pkexec",
+                        "/usr/sbin/losetup",
+                        "-d",
+                        loopDevice
+                    );
+                    Process detachProcess = detachPb.start();
+                    detachProcess.waitFor();
                 } catch (Exception e) {
                     logger.warning("Ошибка при отсоединении loop-устройства: " + e.getMessage());
                 }
@@ -273,6 +306,8 @@ public class EncryptionManager {
                 if (!mountDir.mkdirs()) {
                     throw new IOException("Не удалось создать директорию для монтирования: " + mountPoint);
                 }
+                // Устанавливаем правильные права доступа для скрытой директории
+                executeWithPolkit("chmod 700 " + mountPoint);
             }
 
             System.out.println("Проверка типа файловой системы...");
@@ -286,7 +321,8 @@ public class EncryptionManager {
             }
 
             System.out.println("Попытка монтирования устройства: " + devicePath + " в " + mountPoint);
-            Process mount = Runtime.getRuntime().exec(String.format("sudo mount %s %s", devicePath, mountPoint));
+            // Используем pkexec для монтирования с правами root
+            Process mount = Runtime.getRuntime().exec(String.format("pkexec mount %s %s", devicePath, mountPoint));
 
             try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(mount.getErrorStream()))) {
                 String errorLine;
@@ -303,8 +339,8 @@ public class EncryptionManager {
             // 4. Регистрация устройства через udisks
             registerWithUdisks(devicePath);
 
-            // 5. Изменение прав доступа
-            Process chown = Runtime.getRuntime().exec(String.format("sudo chown -R %s:%s %s", System.getProperty("user.name"), System.getProperty("user.name"), mountPoint));
+            // 5. Изменение прав доступа на владельца
+            Process chown = Runtime.getRuntime().exec(String.format("pkexec chown -R %s:%s %s", username, username, mountPoint));
             if (!chown.waitFor(30, TimeUnit.SECONDS) || chown.exitValue() != 0) {
                 throw new IOException("Ошибка при изменении прав");
             }

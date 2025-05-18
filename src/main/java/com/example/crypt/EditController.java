@@ -43,7 +43,7 @@ public class EditController {
         }
     }
     private boolean isMounted(Partition partition) {
-        String mountPoint = System.getProperty("user.home") + "/mnt/" + partition.getName();
+        String mountPoint = "/home/" + EncryptionManager.getUsername() + "/.mountContainers/" + partition.getName();
         try {
             Process process = Runtime.getRuntime().exec("mount");
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
@@ -62,9 +62,10 @@ public class EditController {
 
     private void handleMountAction(Partition partition) {
         try {
+            String mountPoint = "/home/" + EncryptionManager.getUsername() + "/.mountContainers/" + partition.getName();
+            
             if (partition.isIsMounted()) {
                 // Размонтирование
-                String mountPoint = System.getProperty("user.home") + "/mnt/" + partition.getName();
                 EncryptionManager.unmountContainer(partition.getName(), mountPoint);
 
                 partition.setIsMounted(false);
@@ -80,7 +81,6 @@ public class EditController {
                 Optional<String> result = dialog.showAndWait();
                 if (result.isPresent()) {
                     String password = result.get();
-                    String mountPoint = System.getProperty("user.home") + "/mnt/" + partition.getName();
                     new File(mountPoint).mkdirs();
 
                     EncryptionManager.mountContainer(partition.getPath(), partition.getName(), password, mountPoint);
@@ -104,8 +104,9 @@ public class EditController {
         Optional<ButtonType> result = alert.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
             try {
+                String mountPoint = "/home/" + EncryptionManager.getUsername() + "/.mountContainers/" + partition.getName();
+                
                 if (partition.isIsMounted()) {
-                    String mountPoint = System.getProperty("user.home") + "/mnt/" + partition.getName();
                     EncryptionManager.unmountContainer(partition.getName(), mountPoint);
                 }
 

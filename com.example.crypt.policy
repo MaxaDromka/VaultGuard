@@ -18,42 +18,64 @@
     <description>Create container file</description>
     <message>Authentication is required to create container file</message>
     <defaults>
-      <allow_any>auth_self</allow_any>
-      <allow_inactive>auth_self</allow_inactive>
-      <allow_active>auth_self</allow_active>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>yes</allow_active>
     </defaults>
     <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/truncate</annotate>
+  </action>
+
+  <action id="com.example.crypt.mv">
+    <description>Move container files</description>
+    <message>Authentication is required to move container files</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/mv</annotate>
+  </action>
+
+  <action id="com.example.crypt.shell">
+    <description>Execute shell commands</description>
+    <message>Authentication is required to execute shell commands</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/sh</annotate>
   </action>
 
   <action id="com.example.crypt.losetup">
     <description>Manage loop devices</description>
     <message>Authentication is required to manage loop devices</message>
     <defaults>
-      <allow_any>auth_self</allow_any>
-      <allow_inactive>auth_self</allow_inactive>
-      <allow_active>auth_self</allow_active>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>yes</allow_active>
     </defaults>
     <annotate key="org.freedesktop.policykit.exec.path">/usr/sbin/losetup</annotate>
   </action>
 
   <action id="com.example.crypt.mount">
-    <description>Mount devices</description>
-    <message>Authentication is required to mount devices</message>
+    <description>Mount encrypted containers</description>
+    <message>Authentication is required to mount encrypted containers</message>
     <defaults>
-      <allow_any>auth_self</allow_any>
-      <allow_inactive>auth_self</allow_inactive>
-      <allow_active>auth_self</allow_active>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>yes</allow_active>
     </defaults>
     <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/mount</annotate>
   </action>
 
   <action id="com.example.crypt.umount">
-    <description>Unmount devices</description>
-    <message>Authentication is required to unmount devices</message>
+    <description>Unmount encrypted containers</description>
+    <message>Authentication is required to unmount encrypted containers</message>
     <defaults>
-      <allow_any>auth_self</allow_any>
-      <allow_inactive>auth_self</allow_inactive>
-      <allow_active>auth_self</allow_active>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>yes</allow_active>
     </defaults>
     <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/umount</annotate>
   </action>
@@ -71,14 +93,47 @@
   </action>
 
   <action id="com.example.crypt.cryptsetup">
-    <description>Manage encrypted devices</description>
-    <message>Authentication is required to manage encrypted devices</message>
+    <description>Manage encrypted containers</description>
+    <message>Authentication is required to manage encrypted containers</message>
     <defaults>
-      <allow_any>auth_self</allow_any>
-      <allow_inactive>auth_self</allow_inactive>
-      <allow_active>auth_self</allow_active>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>yes</allow_active>
     </defaults>
     <annotate key="org.freedesktop.policykit.exec.path">/usr/sbin/cryptsetup</annotate>
     <annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate>
+  </action>
+
+  <action id="com.example.crypt.mkfs">
+    <description>Create filesystems</description>
+    <message>Authentication is required to create filesystems</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/sbin/mkfs</annotate>
+  </action>
+
+  <action id="com.example.crypt.chown">
+    <description>Change file ownership</description>
+    <message>Authentication is required to change file ownership</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/chown</annotate>
+  </action>
+
+  <action id="com.example.crypt.mkfs.ext4">
+    <description>Create ext4 filesystem</description>
+    <message>Authentication is required to create ext4 filesystem</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/sbin/mkfs.ext4</annotate>
   </action>
 </policyconfig> 

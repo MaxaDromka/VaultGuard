@@ -9,14 +9,10 @@ fi
 # Копируем файл политики
 cp com.example.crypt.policy /usr/share/polkit-1/actions/
 
-# Копируем файл правил
-cp 99-vaultguard.rules /etc/polkit-1/rules.d/
-
 # Устанавливаем правильные права
 chmod 644 /usr/share/polkit-1/actions/com.example.crypt.policy
-chmod 644 /etc/polkit-1/rules.d/99-vaultguard.rules
 
-# Перезапускаем polkit
+# Перезапускаем службу polkit
 systemctl restart polkit
 
-echo "Правила polkit успешно установлены" 
+echo "Политика Polkit успешно установлена и служба перезапущена" 

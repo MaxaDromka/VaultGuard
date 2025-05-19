@@ -9,18 +9,22 @@ public class Partition {
     private final StringProperty path;
     private final StringProperty size;
     private final StringProperty algorithm;
+    private final StringProperty creationTime;
+    private final StringProperty encryptionMethod;
     private boolean isMounted;
-    private boolean autoMount; // Добавлено новое поле
+    private boolean autoMount;
     private Button mountButton;
     private Button deleteButton;
 
-    public Partition(String name, String path, String size, String algorithm) {
+    public Partition(String name, String path, String size, String algorithm, String creationTime, String encryptionMethod) {
         this.name = new SimpleStringProperty(name);
         this.path = new SimpleStringProperty(path);
         this.size = new SimpleStringProperty(size);
         this.algorithm = new SimpleStringProperty(algorithm);
+        this.creationTime = new SimpleStringProperty(creationTime);
+        this.encryptionMethod = new SimpleStringProperty(encryptionMethod);
         this.isMounted = false;
-        this.autoMount = false; // Инициализация нового поля
+        this.autoMount = false;
         this.mountButton = new Button("Монтировать");
         this.deleteButton = new Button("Удалить");
     }
@@ -42,6 +46,14 @@ public class Partition {
         return algorithm;
     }
 
+    public StringProperty creationTimeProperty() {
+        return creationTime;
+    }
+
+    public StringProperty encryptionMethodProperty() {
+        return encryptionMethod;
+    }
+
     // Обычные геттеры
     public String getName() {
         return name.get();
@@ -57,6 +69,14 @@ public class Partition {
 
     public String getAlgorithm() {
         return algorithm.get();
+    }
+
+    public String getCreationTime() {
+        return creationTime.get();
+    }
+
+    public String getEncryptionMethod() {
+        return encryptionMethod.get();
     }
 
     // Сеттеры
@@ -76,6 +96,14 @@ public class Partition {
         this.algorithm.set(algorithm);
     }
 
+    public void setCreationTime(String creationTime) {
+        this.creationTime.set(creationTime);
+    }
+
+    public void setEncryptionMethod(String encryptionMethod) {
+        this.encryptionMethod.set(encryptionMethod);
+    }
+
     public boolean isIsMounted() {
         return isMounted;
     }
@@ -84,11 +112,11 @@ public class Partition {
         isMounted = mounted;
     }
 
-    public boolean isAutoMount() { // Геттер для нового поля
+    public boolean isAutoMount() {
         return autoMount;
     }
 
-    public void setAutoMount(boolean autoMount) { // Сеттер для нового поля
+    public void setAutoMount(boolean autoMount) {
         this.autoMount = autoMount;
     }
 

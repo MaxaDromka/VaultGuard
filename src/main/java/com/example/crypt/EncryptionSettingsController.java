@@ -15,6 +15,16 @@ import java.util.Set;
 import java.util.TreeSet;
 
 public class EncryptionSettingsController {
+    private static final String[] CRYPTSETUP_CIPHERS = {
+        "aes",
+        "serpent",
+        "twofish",
+        "camellia",
+        "blowfish",
+        "des",
+        "triple-des"
+    };
+
     @FXML private ComboBox<String> algorithmBox;
     @FXML private ComboBox<String> fsTypeBox;
 
@@ -111,16 +121,6 @@ public class EncryptionSettingsController {
 
         validateFields();
     }
-
-    private static final String[] CRYPTSETUP_CIPHERS = {
-            "aes-cbc",
-            "serpent-cbc",
-            "twofish-cbc",
-            "aes-xts",
-            "serpent-xts",
-            "twofish-xts"
-    };
-
 
     private void validateFields() {
         String password = passwordField.isVisible() ? passwordField.getText() : passwordVisibleField.getText();

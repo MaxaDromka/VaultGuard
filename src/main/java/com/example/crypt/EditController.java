@@ -9,6 +9,8 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextInputDialog;
 import javafx.stage.Stage;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.cell.PropertyValueFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -18,12 +20,28 @@ import java.util.Optional;
 
 public class EditController {
     @FXML private TableView<Partition> partitionsTable;
+    @FXML private TableColumn<Partition, String> nameColumn;
+    @FXML private TableColumn<Partition, String> sizeColumn;
+    @FXML private TableColumn<Partition, String> algorithmColumn;
+    @FXML private TableColumn<Partition, String> creationTimeColumn;
+    @FXML private TableColumn<Partition, String> encryptionMethodColumn;
+    @FXML private TableColumn<Partition, String> mountColumn;
+    @FXML private TableColumn<Partition, String> deleteColumn;
     private final ObservableList<Partition> partitions = FXCollections.observableArrayList();
 
     @FXML
-    private void initialize() {
-        refreshDiskList();
-        checkMountedStatus();
+    public void initialize() {
+        // Инициализация колонок
+        nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
+        sizeColumn.setCellValueFactory(new PropertyValueFactory<>("size"));
+        algorithmColumn.setCellValueFactory(new PropertyValueFactory<>("algorithm"));
+        creationTimeColumn.setCellValueFactory(new PropertyValueFactory<>("creationTime"));
+        encryptionMethodColumn.setCellValueFactory(new PropertyValueFactory<>("encryptionMethod"));
+        mountColumn.setCellValueFactory(new PropertyValueFactory<>("mountButton"));
+        deleteColumn.setCellValueFactory(new PropertyValueFactory<>("deleteButton"));
+
+        // Загрузка списка контейнеров
+        refreshPartitionsList();
 
         partitions.forEach(partition -> {
             partition.getMountButton().setOnAction(e -> handleMountAction(partition));
@@ -156,7 +174,7 @@ public class EditController {
     }
 
     @FXML
-    private void refreshDiskList() {
+    private void refreshPartitionsList() {
         partitions.clear();
         ObservableList<Partition> containers = EncryptionManager.getContainersList();
         System.out.println("Количество найденных контейнеров: " + containers.size()); // Логирование

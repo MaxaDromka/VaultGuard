@@ -115,10 +115,12 @@ public class EncryptionManager {
             if (loadResult == 0) {
                 logger.warning("Устройство уже является LUKS2. Форматирование будет пропущено.");
             } else {
+                // Используем выбранный алгоритм шифрования
+                logger.info("Используется алгоритм шифрования: " + algorithm);
                 int formatResult = crypt.crypt_format(
                         cd,
                         "LUKS2",
-                        "aes",
+                        algorithm,  // Используем выбранный алгоритм
                         "xts-plain64",
                         null,
                         null,
@@ -390,9 +392,19 @@ public class EncryptionManager {
                     try {
                         String name = file.getName().replaceFirst("^\\.", ""); // Убираем точку из имени
                         long size = file.length() / (1024 * 1024); // Размер в МБ
-                        String algorithm = getContainerAlgorithm(file.getAbsolutePath());
+                        
+                        // Получаем время создания файла
+                        String creationTime = new java.text.SimpleDateFormat("dd.MM.yyyy HH:mm:ss")
+                            .format(new java.util.Date(file.lastModified()));
+                        
+                        // Получаем информацию о шифровании
+                        String[] encryptionInfo = getContainerEncryptionInfo(file.getAbsolutePath());
+                        String algorithm = encryptionInfo[0];
+                        String encryptionMethod = encryptionInfo[1];
+                        
                         logger.info("Алгоритм для файла " + file.getName() + ": " + algorithm);
-                        containers.add(new Partition(name, file.getAbsolutePath(), String.valueOf(size), algorithm));
+                        containers.add(new Partition(name, file.getAbsolutePath(), String.valueOf(size), 
+                            algorithm, creationTime, encryptionMethod));
                     } catch (Exception e) {
                         logger.severe("Ошибка при обработке файла " + file.getName() + ": " + e.getMessage());
                     }
@@ -408,7 +420,12 @@ public class EncryptionManager {
         return containers;
     }
 
-    private static String getContainerAlgorithm(String containerPath) {
+    private static String[] getContainerEncryptionInfo(String containerPath) {
+        // Проверяем, является ли файл LUKS-контейнером
+        if (!LUKSManager.isLUKSContainer(containerPath)) {
+            return new String[]{"Не LUKS", "Не LUKS"};
+        }
+
         PointerByReference cdRef = new PointerByReference();
         Pointer cd = null;
         try {
@@ -416,7 +433,7 @@ public class EncryptionManager {
             int result = crypt.crypt_init(cdRef, containerPath);
             if (result != 0) {
                 System.err.println("Ошибка при инициализации cryptsetup для файла: " + containerPath);
-                return "Неизвестный";
+                return new String[]{"Неизвестный", "Неизвестный"};
             }
             cd = cdRef.getValue();
 
@@ -424,20 +441,23 @@ public class EncryptionManager {
             result = crypt.crypt_load(cd, "LUKS2", null);
             if (result != 0) {
                 System.err.println("Ошибка при загрузке заголовка LUKS для файла: " + containerPath);
-                return "Неизвестный";
+                return new String[]{"Неизвестный", "Неизвестный"};
             }
 
             // Получение информации о шифре
             String cipher = crypt.crypt_get_cipher(cd);
             String cipherMode = crypt.crypt_get_cipher_mode(cd);
             if (cipher != null && cipherMode != null) {
-                return cipher.toUpperCase() + " (" + cipherMode.toUpperCase() + ")";
+                return new String[]{
+                    cipher.toUpperCase(),
+                    cipherMode.toUpperCase()
+                };
             }
-            return "Неизвестный";
+            return new String[]{"Неизвестный", "Неизвестный"};
         } catch (Exception e) {
             System.err.println("Ошибка при определении алгоритма для файла: " + containerPath);
             e.printStackTrace();
-            return "Неизвестный";
+            return new String[]{"Неизвестный", "Неизвестный"};
         } finally {
             if (cd != null) {
                 crypt.crypt_free(cd);

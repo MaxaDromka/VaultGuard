@@ -82,6 +82,13 @@
                         <PropertyValueFactory property="deleteButton" />
                     </cellValueFactory>
                 </TableColumn>
+
+                <!-- Столбец "Копировать" -->
+                <TableColumn fx:id="copyColumn" prefWidth="100" style="-fx-alignment: CENTER;" text="Копировать">
+                    <cellValueFactory>
+                        <PropertyValueFactory property="copyButton" />
+                    </cellValueFactory>
+                </TableColumn>
             </columns>
 
             <style>

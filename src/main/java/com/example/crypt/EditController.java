@@ -11,6 +11,7 @@ import javafx.scene.control.TextInputDialog;
 import javafx.stage.Stage;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.stage.DirectoryChooser;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -27,6 +28,7 @@ public class EditController {
     @FXML private TableColumn<Partition, String> encryptionMethodColumn;
     @FXML private TableColumn<Partition, String> mountColumn;
     @FXML private TableColumn<Partition, String> deleteColumn;
+    @FXML private TableColumn<Partition, String> copyColumn;
     private final ObservableList<Partition> partitions = FXCollections.observableArrayList();
 
     @FXML
@@ -39,6 +41,7 @@ public class EditController {
         encryptionMethodColumn.setCellValueFactory(new PropertyValueFactory<>("encryptionMethod"));
         mountColumn.setCellValueFactory(new PropertyValueFactory<>("mountButton"));
         deleteColumn.setCellValueFactory(new PropertyValueFactory<>("deleteButton"));
+        copyColumn.setCellValueFactory(new PropertyValueFactory<>("copyButton"));
 
         // Загрузка списка контейнеров
         refreshPartitionsList();
@@ -46,6 +49,7 @@ public class EditController {
         partitions.forEach(partition -> {
             partition.getMountButton().setOnAction(e -> handleMountAction(partition));
             partition.getDeleteButton().setOnAction(e -> handleDeleteAction(partition));
+            partition.getCopyButton().setOnAction(e -> handleCopyAction(partition));
         });
     }
 
@@ -101,11 +105,19 @@ public class EditController {
                     String password = result.get();
                     new File(mountPoint).mkdirs();
 
+                    // Замеряем время начала монтирования
+                    long startTime = System.currentTimeMillis();
+
                     EncryptionManager.mountContainer(partition.getPath(), partition.getName(), password, mountPoint);
+
+                    // Замеряем время окончания монтирования
+                    long endTime = System.currentTimeMillis();
+                    long mountTime = endTime - startTime;
 
                     partition.setIsMounted(true);
                     partition.getMountButton().setText("Размонтировать");
-                    showSuccessAlert("Диск успешно смонтирован в " + mountPoint);
+                    showSuccessAlert(String.format("Диск успешно смонтирован в %s\nВремя монтирования: %.2f секунд", 
+                        mountPoint, mountTime / 1000.0));
                 }
             }
         } catch (IOException e) {
@@ -138,6 +150,37 @@ public class EditController {
                 showSuccessAlert("Диск успешно удален");
             } catch (IOException e) {
                 showErrorAlert("Ошибка при удалении диска: " + e.getMessage());
+            }
+        }
+    }
+
+    private void handleCopyAction(Partition partition) {
+        if (!partition.isIsMounted()) {
+            showErrorAlert("Сначала необходимо смонтировать диск");
+            return;
+        }
+
+        DirectoryChooser directoryChooser = new DirectoryChooser();
+        directoryChooser.setTitle("Выберите директорию для копирования");
+        File selectedDirectory = directoryChooser.showDialog(partitionsTable.getScene().getWindow());
+
+        if (selectedDirectory != null) {
+            try {
+                String mountPoint = "/home/" + EncryptionManager.getUsername() + "/.mountContainers/" + partition.getName();
+                
+                // Замеряем время начала копирования
+                long startTime = System.currentTimeMillis();
+
+                EncryptionManager.copyDataToContainer(selectedDirectory.getAbsolutePath(), partition.getName(), mountPoint);
+
+                // Замеряем время окончания копирования
+                long endTime = System.currentTimeMillis();
+                long copyTime = endTime - startTime;
+
+                showSuccessAlert(String.format("Данные успешно скопированы\nВремя копирования: %.2f секунд", 
+                    copyTime / 1000.0));
+            } catch (IOException e) {
+                showErrorAlert("Ошибка при копировании данных: " + e.getMessage());
             }
         }
     }

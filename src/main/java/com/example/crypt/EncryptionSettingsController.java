@@ -193,6 +193,9 @@ public class EncryptionSettingsController {
         Task<Void> task = new Task<>() {
             @Override
             protected Void call() throws Exception {
+                // Замеряем время начала шифрования
+                long startTime = System.currentTimeMillis();
+
                 EncryptionManager.createContainer(
                         containerPath,
                         containerSize,
@@ -201,6 +204,14 @@ public class EncryptionSettingsController {
                         password,
                         fsType
                 );
+
+                // Замеряем время окончания шифрования
+                long endTime = System.currentTimeMillis();
+                long encryptionTime = endTime - startTime;
+
+                // Обновляем сообщение об успехе с информацией о времени
+                updateMessage(String.format("Контейнер успешно создан и отформатирован.\nВремя шифрования: %.2f секунд", 
+                    encryptionTime / 1000.0));
                 return null;
             }
         };
@@ -210,7 +221,7 @@ public class EncryptionSettingsController {
             encryptBtn.setDisable(false);
             generatePasswordBtn.setDisable(false);
 
-            showAlert("Успех", "Контейнер успешно создан и отформатирован.", Alert.AlertType.INFORMATION);
+            showAlert("Успех", task.getMessage(), Alert.AlertType.INFORMATION);
 
             Stage stage = (Stage) encryptBtn.getScene().getWindow();
             stage.close();

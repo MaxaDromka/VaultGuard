@@ -497,4 +497,69 @@ public class EncryptionManager {
             logger.info("Автозапуск отключен для контейнера: " + containerPath);
         }
     }
+
+    /**
+     * Копирует данные в зашифрованный контейнер.
+     * @param sourcePath путь к исходной директории
+     * @param containerName имя контейнера
+     * @param mountPoint точка монтирования
+     * @throws IOException если произошла ошибка при копировании
+     */
+    public static void copyDataToContainer(String sourcePath, String containerName, String mountPoint) throws IOException {
+        // Проверяем, смонтирован ли контейнер
+        if (!isContainerMounted(containerName, mountPoint)) {
+            throw new IOException("Контейнер не смонтирован");
+        }
+
+        // Формируем команду rsync
+        String rsyncCommand = String.format("rsync -ah --progress %s/* %s", sourcePath, mountPoint);
+        
+        // Выполняем команду с правами пользователя
+        ProcessBuilder pb = new ProcessBuilder(
+            "bash",
+            "-c",
+            rsyncCommand
+        );
+        
+        Process process = pb.start();
+        
+        // Читаем вывод процесса
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                System.out.println("rsync: " + line);
+            }
+        }
+        
+        // Проверяем код завершения
+        int exitCode = 0;
+        try {
+            exitCode = process.waitFor();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        if (exitCode != 0) {
+            throw new IOException("Ошибка при копировании данных: " + exitCode);
+        }
+    }
+
+    /**
+     * Проверяет, смонтирован ли контейнер.
+     */
+    private static boolean isContainerMounted(String containerName, String mountPoint) {
+        try {
+            Process process = Runtime.getRuntime().exec("mount");
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (line.contains(mountPoint)) {
+                        return true;
+                    }
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Ошибка при проверке состояния монтирования: " + e.getMessage());
+        }
+        return false;
+    }
 }

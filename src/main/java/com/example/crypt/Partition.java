@@ -15,6 +15,7 @@ public class Partition {
     private boolean autoMount;
     private Button mountButton;
     private Button deleteButton;
+    private Button copyButton;
 
     public Partition(String name, String path, String size, String algorithm, String creationTime, String encryptionMethod) {
         this.name = new SimpleStringProperty(name);
@@ -27,6 +28,7 @@ public class Partition {
         this.autoMount = false;
         this.mountButton = new Button("Монтировать");
         this.deleteButton = new Button("Удалить");
+        this.copyButton = new Button("Копировать");
     }
 
     // Геттеры для свойств
@@ -126,5 +128,9 @@ public class Partition {
 
     public Button getDeleteButton() {
         return deleteButton;
+    }
+
+    public Button getCopyButton() {
+        return copyButton;
     }
 }

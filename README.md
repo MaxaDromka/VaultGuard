@@ -82,7 +82,6 @@ cd VaultGuard
 - **Mount Container**: Select container and click "Mount"
 - **Unmount Container**: Select mounted container and click "Unmount"
 - **Delete Container**: Select container and click "Delete"
-- **Auto-mount**: Enable/disable automatic mounting at system startup
 
 ## 🔧 Technical Details
 

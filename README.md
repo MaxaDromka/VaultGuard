@@ -125,9 +125,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - LUKS project for the encryption framework
 - JavaFX team for the GUI framework
 - All contributors who have helped shape this project
-
-## 📧 Contact
-
-Your Name - [@yourtwitter](https://twitter.com/yourtwitter) - email@example.com
-
-Project Link: [https://github.com/yourusername/VaultGuard](https://github.com/yourusername/VaultGuard) 

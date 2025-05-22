@@ -16,14 +16,53 @@ public class EncryptionManager {
     static {
         try {
             System.loadLibrary("cryptsetup");
+            // Создаем необходимые директории при инициализации
+            createRequiredDirectories();
         } catch (UnsatisfiedLinkError e) {
             System.err.println("Ошибка: cryptsetup-devel не найдена. Установите её с помощью 'pkexec dnf install cryptsetup-devel'");
             System.exit(1);
         }
     }
 
+    /**
+     * Создает необходимые директории для работы программы
+     */
+    private static void createRequiredDirectories() {
+        if (username == null || username.isEmpty()) {
+            logger.warning("Имя пользователя не установлено. Директории не будут созданы.");
+            return;
+        }
+
+        String[] directories = {
+            "/home/" + username + "/containers",        // Обычная папка для томов
+            "/home/" + username + "/.mountcontainers"   // Скрытая папка для монтирования
+        };
+
+        for (String dirPath : directories) {
+            File dir = new File(dirPath);
+            if (!dir.exists()) {
+                try {
+                    if (dir.mkdirs()) {
+                        logger.info("Создана директория: " + dirPath);
+                        // Устанавливаем правильные права доступа (700 - только владелец)
+                        Process chmod = Runtime.getRuntime().exec("chmod 700 " + dirPath);
+                        chmod.waitFor();
+                    } else {
+                        logger.warning("Не удалось создать директорию: " + dirPath);
+                    }
+                } catch (IOException | InterruptedException e) {
+                    logger.severe("Ошибка при создании директории " + dirPath + ": " + e.getMessage());
+                }
+            } else {
+                logger.info("Директория уже существует: " + dirPath);
+            }
+        }
+    }
+
     public static void setUsername(String user) {
         username = user;
+        // Создаем директории после установки имени пользователя
+        createRequiredDirectories();
     }
 
     public static String getUsername() {
@@ -374,21 +413,25 @@ public class EncryptionManager {
         }
 
         String containersDir = "/home/" + username + "/containers";
+        logger.info("Поиск контейнеров в директории: " + containersDir);
         File containerDir = new File(containersDir);
 
         if (!containerDir.exists()) {
             logger.warning("Папка не существует: " + containersDir);
+            createRequiredDirectories();
             return containers;
         }
 
         if (containerDir.exists() && containerDir.isDirectory()) {
+            logger.info("Сканирование директории на наличие контейнеров...");
             File[] files = containerDir.listFiles((dir, name) ->
                     name.startsWith(".") && !name.equals(".") && !name.equals("..")
             );
             
             if (files != null) {
+                logger.info("Найдено файлов: " + files.length);
                 for (File file : files) {
-                    logger.info("Найден файл: " + file.getName());
+                    logger.info("Обработка файла: " + file.getName());
                     try {
                         String name = file.getName().replaceFirst("^\\.", ""); // Убираем точку из имени
                         long size = file.length() / (1024 * 1024); // Размер в МБ
@@ -402,15 +445,16 @@ public class EncryptionManager {
                         String algorithm = encryptionInfo[0];
                         String encryptionMethod = encryptionInfo[1];
                         
-                        logger.info("Алгоритм для файла " + file.getName() + ": " + algorithm);
+                        logger.info("Добавление контейнера: " + name + " (размер: " + size + "MB, алгоритм: " + algorithm + ")");
                         containers.add(new Partition(name, file.getAbsolutePath(), String.valueOf(size), 
                             algorithm, creationTime, encryptionMethod));
                     } catch (Exception e) {
                         logger.severe("Ошибка при обработке файла " + file.getName() + ": " + e.getMessage());
+                        e.printStackTrace();
                     }
                 }
             } else {
-                logger.info("Файлы не найдены");
+                logger.info("Файлы не найдены в директории: " + containersDir);
             }
         } else {
             logger.warning("Папка не является директорией: " + containersDir);

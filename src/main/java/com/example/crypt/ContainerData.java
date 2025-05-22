@@ -6,8 +6,6 @@ public class ContainerData {
     private String algorithm;
     private String password;
     private String fsType;
-
-    // Геттеры и сеттеры
     public int getSize() { return size; }
     public void setSize(int size) { this.size = size; }
 

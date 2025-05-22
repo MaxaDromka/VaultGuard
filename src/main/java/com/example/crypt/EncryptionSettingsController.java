@@ -49,7 +49,6 @@ public class EncryptionSettingsController {
 
     @FXML
     private void initialize() {
-        // Заполнение алгоритмов шифрования
         // Получаем список поддерживаемых алгоритмов
         algorithmBox.getItems().addAll(CRYPTSETUP_CIPHERS);
         algorithmBox.getSelectionModel().selectFirst();

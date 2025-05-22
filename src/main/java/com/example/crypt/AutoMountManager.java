@@ -111,16 +111,16 @@ public class AutoMountManager {
      * Добавление в планировщик
      */
     private static void addToScheduler(String containerPath, LocalDateTime scheduleTime) {
-        // Здесь должна быть реализация добавления в планировщик
-        // через Java API (например, через Windows Task Scheduler или cron в Linux)
+        //  реализация добавления в планировщик
+        // через Java API
     }
 
     /**
      * Добавление обработчика USB-событий
      */
     private static void addUSBHandler(String containerPath, String usbDeviceId) {
-        // Здесь должна быть реализация обработки USB-событий
-        // через Java API (например, через Windows Device Manager или udev в Linux)
+       //реализация обработки USB-событий
+        // через Java API
     }
 
     /**

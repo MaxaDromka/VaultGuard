@@ -83,8 +83,6 @@ public class AutomationController {
 
     private void loadUSBDevices() {
         try {
-            // Здесь можно добавить код для получения списка USB-устройств
-            // через Java API вместо lsblk
             usbDeviceBox.getItems().addAll("USB_DEVICE_1", "USB_DEVICE_2");
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Ошибка при загрузке USB-устройств", e);

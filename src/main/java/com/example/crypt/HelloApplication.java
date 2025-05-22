@@ -93,8 +93,8 @@ public class HelloApplication extends Application {
         java.awt.MenuItem editItem = new java.awt.MenuItem("Управление разделами");
         editItem.addActionListener(e -> Platform.runLater(this::showManagementWindow));
 
-        java.awt.MenuItem automationItem = new java.awt.MenuItem("Автоматизация и резервное копирование");
-        automationItem.addActionListener(e -> Platform.runLater(this::showAutomationWindow));
+        //java.awt.MenuItem automationItem = new java.awt.MenuItem("Автоматизация и резервное копирование");
+        //automationItem.addActionListener(e -> Platform.runLater(this::showAutomationWindow));
 
         // Добавляем пункт меню для GPG операций
         java.awt.MenuItem gpgItem = new java.awt.MenuItem("Шифрование отдельных файлов");
@@ -113,7 +113,7 @@ public class HelloApplication extends Application {
 
         popup.add(createItem);
         popup.add(editItem);
-        popup.add(automationItem);
+        //popup.add(automationItem);
         popup.add(gpgItem);
         popup.addSeparator();
         popup.add(helpItem);

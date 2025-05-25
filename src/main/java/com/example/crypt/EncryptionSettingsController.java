@@ -20,9 +20,6 @@ public class EncryptionSettingsController {
         "serpent",
         "twofish",
         "camellia",
-        "blowfish",
-        "des",
-        "triple-des"
     };
 
     @FXML private ComboBox<String> algorithmBox;

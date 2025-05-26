@@ -1,85 +1,134 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
 
-<VBox prefWidth="800" prefHeight="700" spacing="10" alignment="TOP_CENTER" style="-fx-background-color: #f5f5f5;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.crypt.GPGController">
+<VBox prefHeight="434.0" prefWidth="687.0" spacing="5" style="-fx-background-color: #f5f5f5;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.crypt.GPGController">
     <padding>
-        <Insets top="20" right="20" bottom="20" left="20"/>
+        <Insets bottom="10" left="10" right="10" top="10" />
     </padding>
 
-    <TabPane VBox.vgrow="ALWAYS">
-        <Tab text="Управление ключами" closable="false">
-            <VBox spacing="10" style="-fx-background-color: white; -fx-padding: 10;">
-                <GridPane vgap="10" hgap="10">
-                    <Label text="Имя:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-                    <TextField fx:id="nameField" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+    <TabPane prefWidth="667.0" VBox.vgrow="ALWAYS">
+        <Tab closable="false" text="Управление ключами">
+            <VBox spacing="5" style="-fx-background-color: white; -fx-padding: 10;">
+                <GridPane hgap="5" vgap="5">
+                    <columnConstraints>
+                        <ColumnConstraints hgrow="SOMETIMES" minWidth="120" prefWidth="140" />
+                        <ColumnConstraints hgrow="ALWAYS" minWidth="80" prefWidth="100" />
+                    </columnConstraints>
                     
-                    <Label text="Email:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-                    <TextField fx:id="emailField" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                    <Label text="Имя:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                    <TextField fx:id="nameField" GridPane.columnIndex="1" GridPane.rowIndex="0" />
                     
-                    <Label text="Пароль:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
-                    <PasswordField fx:id="passwordField" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                    <Label text="Email:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                    <TextField fx:id="emailField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                     
-                    <Button text="Создать ключевую пару" onAction="#handleGenerateKeyPair" 
-                            GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+                    <Label text="Пароль:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+                    <PasswordField fx:id="passwordField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                    
+                    <Button onAction="#handleGenerateKeyPair" style="-fx-background-color: #4CAF50; -fx-text-fill: white;" text="Создать ключевую пару" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+               <rowConstraints>
+                  <RowConstraints />
+                  <RowConstraints />
+                  <RowConstraints />
+                  <RowConstraints />
+               </rowConstraints>
                 </GridPane>
                 
-                <Separator/>
+                <Separator />
                 
-                <HBox spacing="10">
-                    <Button text="Экспортировать публичный ключ" onAction="#handleExportKey"/>
-                    <Button text="Импортировать публичный ключ" onAction="#handleImportKey"/>
+                <HBox alignment="CENTER_LEFT" spacing="5">
+                    <Button onAction="#handleExportKey" style="-fx-background-color: #2196F3; -fx-text-fill: white;" text="Экспорт ключа" />
+                    <Button onAction="#handleImportKey" style="-fx-background-color: #2196F3; -fx-text-fill: white;" text="Импорт ключа" />
                 </HBox>
                 
                 <TableView fx:id="keysTable" VBox.vgrow="ALWAYS">
                     <columns>
-                        <TableColumn text="ID" fx:id="keyIdColumn"/>
-                        <TableColumn text="Имя" fx:id="keyNameColumn"/>
-                        <TableColumn text="Email" fx:id="keyEmailColumn"/>
+                        <TableColumn fx:id="keyIdColumn" prefWidth="183.0" text="ID" />
+                        <TableColumn fx:id="keyNameColumn" prefWidth="171.0" text="Имя" />
+                        <TableColumn fx:id="keyEmailColumn" prefWidth="291.0" text="Email" />
                     </columns>
                 </TableView>
             </VBox>
         </Tab>
         
-        <Tab text="Шифрование файлов" closable="false">
-            <VBox spacing="10" style="-fx-background-color: white; -fx-padding: 10;">
-                <GridPane vgap="10" hgap="10">
-                    <Label text="Исходный файл:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+        <Tab closable="false" text="Шифрование файлов">
+            <VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="393.0" prefWidth="667.0" spacing="5" style="-fx-background-color: white; -fx-padding: 10;">
+                <GridPane hgap="5" vgap="5">
+                    <columnConstraints>
+                        <ColumnConstraints hgrow="SOMETIMES" minWidth="120" prefWidth="140" />
+                        <ColumnConstraints hgrow="ALWAYS" minWidth="80" prefWidth="100" />
+                    </columnConstraints>
+                    
+                    <Label text="Исходный файл:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
                     <HBox spacing="5" GridPane.columnIndex="1" GridPane.rowIndex="0">
-                        <TextField fx:id="sourceFileField" HBox.hgrow="ALWAYS"/>
-                        <Button text="..." onAction="#handleSelectSourceFile"/>
+                        <TextField fx:id="sourceFileField" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="26.0" prefWidth="155.0" HBox.hgrow="ALWAYS" />
+                        <Button onAction="#handleSelectSourceFile" style="-fx-background-color: #2196F3; -fx-text-fill: white;" text="..." />
                     </HBox>
                     
-                    <Label text="Получатель:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-                    <ComboBox fx:id="recipientComboBox" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                    <Label text="Получатель:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                    <ComboBox fx:id="recipientComboBox" prefHeight="26.0" prefWidth="153.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                     
-                    <Button text="Зашифровать" onAction="#handleEncrypt" 
-                            GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                    <Button onAction="#handleEncrypt" style="-fx-background-color: #4CAF50; -fx-text-fill: white;" text="Зашифровать" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+               <rowConstraints>
+                  <RowConstraints />
+                  <RowConstraints />
+                  <RowConstraints />
+               </rowConstraints>
                 </GridPane>
             </VBox>
         </Tab>
         
-        <Tab text="Расшифрование файлов" closable="false">
-            <VBox spacing="10" style="-fx-background-color: white; -fx-padding: 10;">
-                <GridPane vgap="10" hgap="10">
-                    <Label text="Зашифрованный файл:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+        <Tab closable="false" text="Расшифрование файлов">
+            <VBox spacing="5" style="-fx-background-color: white; -fx-padding: 10;">
+                <GridPane hgap="5" vgap="5">
+                    <columnConstraints>
+                        <ColumnConstraints hgrow="SOMETIMES" minWidth="120" prefWidth="140" />
+                        <ColumnConstraints hgrow="ALWAYS" minWidth="80" prefWidth="100" />
+                    </columnConstraints>
+                    
+                    <Label text="Защищённый файл" GridPane.columnIndex="0" GridPane.rowIndex="0" />
                     <HBox spacing="5" GridPane.columnIndex="1" GridPane.rowIndex="0">
-                        <TextField fx:id="encryptedFileField" HBox.hgrow="ALWAYS"/>
-                        <Button text="..." onAction="#handleSelectEncryptedFile"/>
+                        <TextField fx:id="encryptedFileField" layoutX="5.0" layoutY="5.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="26.0" prefWidth="250.0" HBox.hgrow="ALWAYS">
+                     <padding>
+                        <Insets top="10.0" />
+                     </padding>
+                     <HBox.margin>
+                        <Insets />
+                     </HBox.margin>
+                  </TextField>
+                        <Button onAction="#handleSelectEncryptedFile" style="-fx-background-color: #2196F3; -fx-text-fill: white;" text="..." />
                     </HBox>
                     
-                    <Label text="Пароль:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-                    <PasswordField fx:id="decryptPasswordField" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                    <Label text="Пароль:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                    <PasswordField fx:id="decryptPasswordField" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="26.0" prefWidth="250.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                     
-                    <Button text="Расшифровать" onAction="#handleDecrypt" 
-                            GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                    <Button onAction="#handleDecrypt" style="-fx-background-color: #4CAF50; -fx-text-fill: white;" text="Расшифровать" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+               <rowConstraints>
+                  <RowConstraints />
+                  <RowConstraints />
+                  <RowConstraints />
+               </rowConstraints>
                 </GridPane>
             </VBox>
         </Tab>
     </TabPane>
 
-    <ProgressBar fx:id="progressBar" visible="false" prefWidth="Infinity"/>
-    <Label fx:id="statusLabel" style="-fx-text-fill: #666;"/>
-</VBox> 
+    <ProgressBar fx:id="progressBar" prefWidth="Infinity" visible="false" />
+    <Label fx:id="statusLabel" style="-fx-text-fill: #666;" />
+</VBox>

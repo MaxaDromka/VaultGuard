@@ -28,6 +28,7 @@ public class GPGController {
     @FXML
     public void initialize() {
         // Настройка таблицы ключей
+        keysTable.setPlaceholder(new Label("Таблица пуста"));
         keyIdColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
         keyNameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         keyEmailColumn.setCellValueFactory(new PropertyValueFactory<>("email"));

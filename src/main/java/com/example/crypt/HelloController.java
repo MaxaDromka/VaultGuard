@@ -6,6 +6,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 
@@ -18,6 +19,7 @@ public class HelloController {
     @FXML private TextField sizeField;
     @FXML private TextField nameField;
     @FXML private Button nextBtn;
+    @FXML private VBox vbox;
 
     private Stage stage;
 
@@ -27,10 +29,19 @@ public class HelloController {
         sizeSlider.setMin(100);
         sizeSlider.setMax(100000);
         sizeSlider.setValue(1000);
+        vbox.setPrefWidth(792);
+        vbox.setPrefHeight(504);
 
         // Синхронизация ползунка и текстового поля
         sizeSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
             sizeField.setText(String.format("%.0f", newVal));
+        });
+
+        nextBtn.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                Stage stage = (Stage) newScene.getWindow();
+                stage.setResizable(false); // Запрет изменения размера
+            }
         });
 
         sizeField.textProperty().addListener((obs, oldVal, newVal) -> {
@@ -40,7 +51,6 @@ public class HelloController {
                     sizeSlider.setValue(value);
                 }
             } catch (NumberFormatException e) {
-                // Игнорируем некорректный ввод
             }
         });
 

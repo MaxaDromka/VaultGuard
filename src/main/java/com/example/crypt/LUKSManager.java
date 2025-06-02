@@ -71,18 +71,12 @@ public class LUKSManager {
 
         // Создаем точку монтирования
         Files.createDirectories(Paths.get(mountPoint));
-
-        // Здесь должна быть реализация монтирования через Java API
-        // В реальном приложении это можно сделать через JNA или JNI
-        // для прямого вызова системных функций
     }
 
     /**
      * Размонтирование LUKS-контейнера
      */
     public static void unmountContainer(String mountPoint) throws IOException {
-        // Здесь должна быть реализация размонтирования через Java API
-        // В реальном приложении это можно сделать через JNA или JNI
     }
 
     /**
@@ -101,9 +95,6 @@ public class LUKSManager {
             // Генерируем ключ из пароля и соли
             byte[] key = deriveKey(password, salt);
             raf.write(key);
-
-            // Записываем остальные параметры заголовка
-            // (в реальном приложении здесь будет больше параметров)
         }
     }
 

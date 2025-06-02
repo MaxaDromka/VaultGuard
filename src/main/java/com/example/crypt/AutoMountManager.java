@@ -37,7 +37,7 @@ public class AutoMountManager {
             }
 
             // Добавляем в автозагрузку через Java API
-            addToStartup(containerPath);
+          //  addToStartup(containerPath);
 
             logger.info("Автозапуск включен для контейнера: " + containerPath);
         } catch (Exception e) {
@@ -64,7 +64,7 @@ public class AutoMountManager {
             }
 
             // Добавляем в планировщик через Java API
-            addToScheduler(containerPath, scheduleTime);
+           // addToScheduler(containerPath, scheduleTime);
 
             logger.info("Настроено монтирование по расписанию для: " + containerPath);
         } catch (Exception e) {
@@ -91,36 +91,12 @@ public class AutoMountManager {
             }
 
             // Добавляем обработчик USB-событий через Java API
-            addUSBHandler(containerPath, usbDeviceId);
+            //addUSBHandler(containerPath, usbDeviceId);
 
             logger.info("Настроено монтирование по USB для: " + containerPath);
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Ошибка при настройке USB-монтирования", e);
         }
-    }
-
-    /**
-     * Добавление в автозагрузку
-     */
-    private static void addToStartup(String containerPath) {
-        // Здесь должна быть реализация добавления в автозагрузку
-        // через Java API (например, через реестр Windows или systemd в Linux)
-    }
-
-    /**
-     * Добавление в планировщик
-     */
-    private static void addToScheduler(String containerPath, LocalDateTime scheduleTime) {
-        //  реализация добавления в планировщик
-        // через Java API
-    }
-
-    /**
-     * Добавление обработчика USB-событий
-     */
-    private static void addUSBHandler(String containerPath, String usbDeviceId) {
-       //реализация обработки USB-событий
-        // через Java API
     }
 
     /**

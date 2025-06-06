@@ -50,16 +50,6 @@ git clone https://github.com/yourusername/VaultGuard.git
 cd VaultGuard
 ```
 
-3. Build the project:
-```bash
-./gradlew build
-```
-
-4. Run the application:
-```bash
-./gradlew run
-```
-
 ## 💻 Usage
 
 ### Creating a New Container

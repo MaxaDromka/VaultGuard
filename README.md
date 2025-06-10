@@ -41,27 +41,13 @@ VaultGuard is a powerful and user-friendly encryption management system that pro
 
 1. Install required dependencies:
 ```bash
-# For Fedora/RHEL-based systems
 sudo dnf install cryptsetup-devel
-
-# For Ubuntu/Debian-based systems
-sudo apt-get install cryptsetup-dev
 ```
 
 2. Clone the repository:
 ```bash
 git clone https://github.com/yourusername/VaultGuard.git
 cd VaultGuard
-```
-
-3. Build the project:
-```bash
-./gradlew build
-```
-
-4. Run the application:
-```bash
-./gradlew run
 ```
 
 ## 💻 Usage

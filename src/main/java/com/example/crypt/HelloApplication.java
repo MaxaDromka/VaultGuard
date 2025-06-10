@@ -145,11 +145,19 @@ public class HelloApplication extends Application {
 
             HelloController controller = loader.getController();
             Stage creationStage = new Stage();
-            controller.setStage(creationStage);
+            creationStage.setResizable(false);
+
+            creationStage.setMinWidth(900);
+            creationStage.setMinHeight(600);
+            creationStage.setMaxWidth(1000);
+            creationStage.setMaxHeight(800);
 
             Scene scene = new Scene(root);
             creationStage.setTitle("Создание шифрованного раздела");
             creationStage.setScene(scene);
+
+            controller.setStage(creationStage);
+
             creationStage.show();
         } catch (Exception e) {
             e.printStackTrace();

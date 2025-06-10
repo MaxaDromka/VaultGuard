@@ -12,13 +12,13 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox fx:id="vbox" spacing="20" style="-fx-background-color: #f5f5f5;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.crypt.HelloController">
+<VBox fx:id="vbox" alignment="CENTER" maxHeight="800.0" maxWidth="1000.0" minHeight="600.0" minWidth="800.0" spacing="20" style="-fx-background-color: #f5f5f5;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.crypt.HelloController">
     <padding><Insets topRightBottomLeft="20" /></padding>
 
     <Label style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" text="Создание зашифрованного раздела">
         <padding><Insets bottom="20" /></padding>
     </Label>
-    <GridPane hgap="20" maxHeight="400" maxWidth="747" minHeight="400" minWidth="747" prefHeight="400" prefWidth="747" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 20;" vgap="15">
+    <GridPane alignment="CENTER" hgap="20" maxHeight="400" maxWidth="747" minWidth="900.0" prefHeight="400" prefWidth="747" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 20;" vgap="15">
     <padding><Insets topRightBottomLeft="20" /></padding>
 
         <Label style="-fx-font-size: 14px; -fx-font-weight: bold;" text="Выберите папку:" GridPane.columnIndex="0" GridPane.rowIndex="0">
